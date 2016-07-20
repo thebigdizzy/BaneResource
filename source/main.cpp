@@ -9,7 +9,7 @@
 
 #if defined(_WIN32) || (_WIN64)
 #include "SDL.h"
-//#include "SDL_image.h"
+#include "SDL_image.h"
 //#include "SDL_mixer.h"
 //#include "SDL_ttf.h"
 #endif
