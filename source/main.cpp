@@ -26,6 +26,9 @@
 #include <time.h>	// time
 #include <unistd.h> // sleep
 
+// player include
+#include "Player.h"
+
 using namespace std;
 
 // CODE FOR FRAME RATE INDEPENDENCE
@@ -47,6 +50,7 @@ int main(int argc, char* argv[]) {
 	string s_cwd(getcwd(NULL, 0));
 
 	string imageDir = s_cwd + "/BaneResource/images/";
+	string audioDir = s_cwd + "/BaneResource/audio/";
 
 #endif
 
@@ -93,7 +97,7 @@ int main(int argc, char* argv[]) {
 	// create the renderer
 	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
-	string path = imageDir + "GUITest.png";
+	string path = imageDir + "LevelLayout.png";
 
 	// get image for testing
 	SDL_Texture *testTex = NULL;
@@ -103,9 +107,16 @@ int main(int argc, char* argv[]) {
 
 	SDL_Rect testRect;
 	testRect.x = 0;
-	testRect.y = 0;
-	testRect.w = 1024;
-	testRect.h = 768;
+	testRect.y = -1536;
+	testRect.w = 3072;
+	testRect.h = 2304;
+
+	// back groung x and y pos
+	float X_pos = testRect.x;
+	float Y_pos = testRect.y;
+
+	// initialize the Player object
+	Player player(renderer, imageDir, audioDir, 0,525);
 
 	// ***** SDL Event to handle input
 	SDL_Event event;
@@ -114,7 +125,7 @@ int main(int argc, char* argv[]) {
 	enum GameState { MENU, LEVEL1, WIN, LOSE };
 
 	// ***** set up the initial state
-	GameState gameState = MENU;
+	GameState gameState = LEVEL1;
 
 	// bool value to control movement through the states
 	bool menu = false, level1 = false, win = false, lose = false, quit = false;
@@ -147,9 +158,14 @@ int main(int argc, char* argv[]) {
 					// enter case for button down with this code - case SDL_CONTROLLERBUTTONDOWN: & if (event.cdevice.which == 0)
 					case SDL_MOUSEBUTTONDOWN:
 						if(event.button.button == SDL_BUTTON_LEFT){
-							gameState = LEVEL1;
-							menu = false;
+							//gameState = LEVEL1;
+							//menu = false;
+							//cout << "mouse button down" << endl;
 						}
+						break;
+					case SDL_KEYDOWN:
+						player.OnButtonPress(event);
+						cout << "key down" << endl;
 						break;
 
 					default:break;
@@ -200,29 +216,65 @@ int main(int argc, char* argv[]) {
 					// enter case for button down with this code - case SDL_CONTROLLERBUTTONDOWN: & if (event.cdevice.which == 0)
 					case SDL_MOUSEBUTTONDOWN:
 						if(event.button.button == SDL_BUTTON_LEFT){
-							gameState = WIN;
+							//use this area to shoot an arrow
+
+						}
+						break;
+					case SDL_KEYDOWN:
+						if(event.key.keysym.sym == SDLK_ESCAPE){
+							quit = true;
 							level1 = false;
 						}
+						// send the button info to the player object
+						player.OnButtonPress(event);
+						break;
+					case SDL_KEYUP:
+						player.OnButtonRelease(event);
 						break;
 
 					mouseX = event.button.x;
 					mouseY = event.button.y;
+
+					player.OnMouseEvent(mouseX, mouseY);
 					default:break;
 					} // end switch event type
 				} // end poll event
 
+				// update the player
+				player.Update(deltaTime);
+
+				// update the background
+				if((player.posRect.x >= 1024 - player.posRect.w) && player.right == true){
+
+					X_pos -= (player.speed) * deltaTime;
+
+					if(testRect.x >= -512){
+						testRect.x = (int)(X_pos + .5f);
+					} else {
+						X_pos = testRect.x;
+					}
+				}
+				cout << X_pos << endl;
+
 				// Clear SDL renderer
-				//SDL_RenderClear(renderer);
+				SDL_RenderClear(renderer);
 
 				// put in display images here with SDL_RenderCopy()
+
+				// display the test background
+				SDL_RenderCopy(renderer, testTex, NULL, &testRect);
+
+				// draw the player
+				player.Draw(renderer);
+
 				// Fill the surface white
-				SDL_FillRect( screenSurface, NULL, SDL_MapRGB(screenSurface->format, 0, 42, 254));
+				//SDL_FillRect( screenSurface, NULL, SDL_MapRGB(screenSurface->format, 0, 42, 254));
 
 				// Update the surface
-				SDL_UpdateWindowSurface(window);
+				//SDL_UpdateWindowSurface(window);
 
 				// present the renderer
-				//SDL_RenderPresent(renderer);
+				SDL_RenderPresent(renderer);
 
 			} // end level 1 game loop
 
@@ -249,8 +301,8 @@ int main(int argc, char* argv[]) {
 					// enter case for button down with this code - case SDL_CONTROLLERBUTTONDOWN: & if (event.cdevice.which == 0)
 					case SDL_MOUSEBUTTONDOWN:
 						if(event.button.button == SDL_BUTTON_LEFT){
-							gameState = LOSE;
-							win = false;
+							//gameState = LOSE;
+							//win = false;
 						}
 						break;
 
@@ -298,8 +350,8 @@ int main(int argc, char* argv[]) {
 					// enter case for button down with this code - case SDL_CONTROLLERBUTTONDOWN: & if (event.cdevice.which == 0)
 					case SDL_MOUSEBUTTONDOWN:
 						if(event.button.button == SDL_BUTTON_LEFT){
-							quit = true;
-							lose = false;
+							//quit = true;
+							//lose = false;
 						}
 						break;
 
@@ -330,8 +382,6 @@ int main(int argc, char* argv[]) {
 	} // end entire game loop
 
 	// The window is open: could enter program loop here (see SDL_PollEvent())
-
-	//SDL_Delay(3000);  // Pause execution for 3000 milliseconds, for example
 
 	// Close and destroy the window
 	SDL_DestroyWindow(window);
