@@ -111,12 +111,46 @@ int main(int argc, char* argv[]) {
 	testRect.w = 3072;
 	testRect.h = 2304;
 
+	string lGPath = imageDir + "leftGround.png";
+
+	// get image for testing
+	SDL_Texture *lGTex = NULL;
+	screenSurface = IMG_Load(lGPath.c_str());
+
+	lGTex = SDL_CreateTextureFromSurface(renderer, screenSurface);
+
+	SDL_Rect leftGroundRect;
+	leftGroundRect.x = 0;
+	leftGroundRect.y = 635;
+	leftGroundRect.w = 832;
+	leftGroundRect.h = 133;
+
+	string rGPath = imageDir + "rightGround.png";
+
+	// get image for testing
+	SDL_Texture *rGTex = NULL;
+	screenSurface = IMG_Load(rGPath.c_str());
+
+	rGTex = SDL_CreateTextureFromSurface(renderer, screenSurface);
+
+	SDL_Rect rightGroundRect;
+	rightGroundRect.x = 1184;
+	rightGroundRect.y = 2172;
+	rightGroundRect.w = 1888;
+	rightGroundRect.h = 133;
+
 	// back groung x and y pos
 	float X_pos = testRect.x;
 	float Y_pos = testRect.y;
 
+	float RX_pos = rightGroundRect.x;
+	float RY_pos = rightGroundRect.y;
+
+	float LX_pos = leftGroundRect.x;
+	float LY_pos = leftGroundRect.y;
+
 	// initialize the Player object
-	Player player(renderer, imageDir, audioDir, 0,525);
+	Player player(renderer, imageDir, audioDir, 0,520);
 
 	// ***** SDL Event to handle input
 	SDL_Event event;
@@ -232,10 +266,10 @@ int main(int argc, char* argv[]) {
 						player.OnButtonRelease(event);
 						break;
 
-					mouseX = event.button.x;
-					mouseY = event.button.y;
+						mouseX = event.button.x;
+						mouseY = event.button.y;
 
-					player.OnMouseEvent(mouseX, mouseY);
+						player.OnMouseEvent(mouseX, mouseY);
 					default:break;
 					} // end switch event type
 				} // end poll event
@@ -243,18 +277,74 @@ int main(int argc, char* argv[]) {
 				// update the player
 				player.Update(deltaTime);
 
+				// check for collison with the ground
+				player.groundCollisionLeft = SDL_HasIntersection(&player.posRect, &leftGroundRect);
+				player.groundCollisionRight = SDL_HasIntersection(&player.posRect, &rightGroundRect);
+
 				// update the background
-				if((player.posRect.x >= 1024 - player.posRect.w) && player.right == true){
-
+				if(player.right == true){
 					X_pos -= (player.speed) * deltaTime;
+					RX_pos -= (player.speed) * deltaTime;
+					LX_pos -= (player.speed) * deltaTime;
 
-					if(testRect.x >= -512){
+					if(testRect.x >= -1024){
 						testRect.x = (int)(X_pos + .5f);
+						rightGroundRect.x = (int)(RX_pos + .5f);
+						leftGroundRect.x = (int)(LX_pos + .5f);
 					} else {
 						X_pos = testRect.x;
+						RX_pos = rightGroundRect.x;
+						LX_pos = leftGroundRect.x;
 					}
 				}
-				cout << X_pos << endl;
+				if(player.left == true){
+
+					X_pos += (player.speed) * deltaTime;
+					RX_pos += (player.speed) * deltaTime;
+					LX_pos += (player.speed) * deltaTime;
+
+					if(testRect.x <= -2){
+						testRect.x = (int)(X_pos + .5f);
+						rightGroundRect.x = (int)(RX_pos + .5f);
+						leftGroundRect.x = (int)(LX_pos + .5f);
+					} else {
+						X_pos = testRect.x;
+						RX_pos = rightGroundRect.x;
+						LX_pos = leftGroundRect.x;
+					}
+				}
+				if(player.jump && player.vel_Y < 0){
+					Y_pos += player.vel_Y * deltaTime;
+					RY_pos += player.vel_Y * deltaTime;
+					LY_pos += player.vel_Y * deltaTime;
+
+					if(testRect.y > 768){
+						testRect.y = (int)(Y_pos + .5f);
+						rightGroundRect.y = (int)(RY_pos + .5f);
+						leftGroundRect.y = (int)(LY_pos + .5f);
+					} else {
+						Y_pos = testRect.y;
+						RY_pos = rightGroundRect.y;
+						LY_pos = leftGroundRect.y;
+					}
+				}
+				cout << player.vel_Y << endl;
+				if(player.jump && player.vel_Y >= 0){
+					Y_pos -= player.vel_Y * deltaTime;
+					RY_pos -= player.vel_Y * deltaTime;
+					LY_pos -= player.vel_Y * deltaTime;
+
+					if(testRect.y < 0){
+						testRect.y = (int)(Y_pos + .5f);
+						rightGroundRect.y = (int)(RY_pos + .5f);
+						leftGroundRect.y = (int)(LY_pos + .5f);
+					} else {
+						Y_pos = testRect.y;
+						RY_pos = rightGroundRect.y;
+						LY_pos = leftGroundRect.y;
+					}
+				}
+
 
 				// Clear SDL renderer
 				SDL_RenderClear(renderer);
@@ -264,14 +354,11 @@ int main(int argc, char* argv[]) {
 				// display the test background
 				SDL_RenderCopy(renderer, testTex, NULL, &testRect);
 
+				SDL_RenderCopy(renderer, rGTex, NULL, &rightGroundRect);
+				SDL_RenderCopy(renderer, lGTex, NULL, &leftGroundRect);
+
 				// draw the player
 				player.Draw(renderer);
-
-				// Fill the surface white
-				//SDL_FillRect( screenSurface, NULL, SDL_MapRGB(screenSurface->format, 0, 42, 254));
-
-				// Update the surface
-				//SDL_UpdateWindowSurface(window);
 
 				// present the renderer
 				SDL_RenderPresent(renderer);
@@ -306,8 +393,8 @@ int main(int argc, char* argv[]) {
 						}
 						break;
 
-					mouseX = event.button.x;
-					mouseY = event.button.y;
+						mouseX = event.button.x;
+						mouseY = event.button.y;
 					default:break;
 					} // end switch event type
 				} // end poll event
@@ -355,8 +442,8 @@ int main(int argc, char* argv[]) {
 						}
 						break;
 
-					mouseX = event.button.x;
-					mouseY = event.button.y;
+						mouseX = event.button.x;
+						mouseY = event.button.y;
 					default:break;
 					} // end switch event type
 				} // end poll event

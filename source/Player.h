@@ -30,7 +30,7 @@ public:
 	bool active;
 
 	// bools for movement
-	bool left, right;
+	bool left, right, jump, groundCollisionLeft, groundCollisionRight, falling;
 
 	// string to find the player image
 	string playerPath;
@@ -43,12 +43,8 @@ public:
 
 	float speed;
 	float pos_X, pos_Y;
-
-
-	// add x and y values
-	Sint16 Xvalue, Yvalue;
-
-	float x, y;
+	float vel_Y;
+	float newJumpLevel, oldJumpLevel;
 
 	SDL_Point center;
 
