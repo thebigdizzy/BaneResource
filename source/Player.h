@@ -32,6 +32,8 @@ public:
 	// bools for movement
 	bool left, right, jump, groundCollisionLeft, groundCollisionRight, falling;
 
+	bool platform[15];
+
 	// string to find the player image
 	string playerPath;
 
@@ -63,6 +65,8 @@ public:
 	void OnMouseEvent(int x, int y);
 
 	void Update (float deltaTime);
+
+	void GravitySimulator(float deltaTime);
 
 	void Draw(SDL_Renderer *renderer);
 

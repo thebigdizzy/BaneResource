@@ -12,6 +12,10 @@ Player::Player(SDL_Renderer *renderer, string filePath, string audioPath, float 
 
 	speed = 300;
 
+	for (int i = 0; i < 15; i++){
+		platform[i] = false;
+	}
+
 	playerPath = filePath + "KingArthur.png";
 
 	texture = IMG_LoadTexture(renderer, playerPath.c_str());
@@ -25,8 +29,8 @@ Player::Player(SDL_Renderer *renderer, string filePath, string audioPath, float 
 
 	int w, h;
 	SDL_QueryTexture(texture, NULL, NULL, &w, &h);
-	posRect.w = w/8;
-	posRect.h = h/8;
+	posRect.w = w/10;
+	posRect.h = h/10;
 
 	pos_X = x;
 	pos_Y = y;
@@ -35,7 +39,7 @@ Player::Player(SDL_Renderer *renderer, string filePath, string audioPath, float 
 	left = false;
 	right = false;
 	falling = false;
-	groundCollisionLeft = true;
+	groundCollisionLeft = false;
 	groundCollisionRight = false;
 
 	vel_Y = 0;
@@ -57,12 +61,13 @@ void Player::OnButtonPress(SDL_Event event)
 		right = true;
 		break;
 	case SDLK_SPACE:
-		if(!jump){
+		if(!jump & !falling){
 			oldJumpLevel = pos_Y;
-			groundCollisionRight = false;
-			groundCollisionLeft = false;
-			jump = true;
-			vel_Y = -1000;
+			vel_Y = -200;
+
+			for (int i = 0; i < 15; i++){
+				platform[i] = false;
+			}
 		}
 		break;
 	default:break;
@@ -87,50 +92,79 @@ void Player::OnMouseEvent(int x, int y){
 
 void Player::Update(float deltaTime){
 	// move the player
-	if(!jump && (groundCollisionRight || groundCollisionLeft)){
+	if((!jump && !falling) || speed == 600){
 		if(pos_X <= (1024 - posRect.w) && pos_X >= 0){
 			if(left && !right){
-				pos_X -= speed * deltaTime;
+				pos_X -= speed/2 * deltaTime;
 			}
 			if(right && !left){
-				pos_X += speed * deltaTime;
+				pos_X += speed/2 * deltaTime;
 			}
-			//cout << posRect.x << endl;
 		}
 	}
 
 	if(pos_X > 1024 - posRect.w){
 		pos_X = 1024 - posRect.w;
 	}
-
 	if(pos_X < 0){
 		pos_X = 0;
 	}
-
-	if(pos_Y > 768 - posRect.h){
-		pos_Y = 768 - posRect.h;
+	if(pos_Y > 700 - posRect.h){
+		pos_Y = 700 - posRect.h;
 	}
 	if(pos_Y < 0){
 		pos_Y = 0;
 	}
-	//cout << groundCollision << endl;
 
 	// set up "gravity" simulator
-	if(jump || !groundCollisionRight && !groundCollisionLeft){
-		vel_Y += .5f;
-		pos_Y += vel_Y * deltaTime;
-
-		if((groundCollisionLeft || groundCollisionRight) && jump && vel_Y > -100){
-			oldJumpLevel = newJumpLevel;
-			newJumpLevel = pos_Y;
-			jump = false;
-		}
-	} else {
-		pos_Y = newJumpLevel;
-	}
+	GravitySimulator(deltaTime);
 
 	posRect.y = (int)(pos_Y + .5f);
 	posRect.x = (int)(pos_X + .5f);
+}
+
+void Player::GravitySimulator(float deltaTime){
+	// set up "gravity" simulator
+	if(jump || falling){
+		vel_Y += .5f;
+		pos_Y += vel_Y * deltaTime;
+	}
+
+	for (int i = 0; i < 15; i++){
+		if(platform[i] && (falling)){
+			vel_Y = 0;
+			falling = false;
+			jump = false;
+			break;
+		}
+
+		if((groundCollisionLeft || groundCollisionRight) && (falling)){
+			vel_Y = 0;
+			falling = false;
+			jump = false;
+			break;
+		}
+	}
+
+	if(!jump && !falling){
+		for (int i = 0; i < 15; i++){
+			if(platform[i] || groundCollisionRight || groundCollisionLeft){
+				falling = false;
+				break;
+			} else {
+				falling = true;
+			}
+		}
+	}
+
+	if(vel_Y > 0){
+		falling = true;
+		jump = false;
+	}
+	if(vel_Y < 0){
+		falling = false;
+		jump = true;
+	}
 }
 
 void Player::Draw(SDL_Renderer *renderer){

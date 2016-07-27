@@ -29,6 +29,9 @@
 // player include
 #include "Player.h"
 
+// platform include
+#include "platform.h"
+
 using namespace std;
 
 // CODE FOR FRAME RATE INDEPENDENCE
@@ -135,7 +138,7 @@ int main(int argc, char* argv[]) {
 
 	SDL_Rect rightGroundRect;
 	rightGroundRect.x = 1184;
-	rightGroundRect.y = 2172;
+	rightGroundRect.y = 635;
 	rightGroundRect.w = 1888;
 	rightGroundRect.h = 133;
 
@@ -150,7 +153,13 @@ int main(int argc, char* argv[]) {
 	float LY_pos = leftGroundRect.y;
 
 	// initialize the Player object
-	Player player(renderer, imageDir, audioDir, 0,520);
+	Player player(renderer, imageDir, audioDir, 0, 540);
+
+	// set up the platforms in a vector
+	vector<Platform> platformList;
+
+	// initialize the platforms
+	platformList.push_back(Platform(renderer, imageDir, audioDir, 0, 500));
 
 	// ***** SDL Event to handle input
 	SDL_Event event;
@@ -217,12 +226,6 @@ int main(int argc, char* argv[]) {
 				// display the test background
 				SDL_RenderCopy(renderer, testTex, NULL, &testRect);
 
-				// Fill the surface white
-				//SDL_FillRect( screenSurface, NULL, SDL_MapRGB(screenSurface->format, 0, 42, 254));
-
-				// Update the surface
-				//SDL_UpdateWindowSurface(window);
-
 				// present the renderer
 				SDL_RenderPresent(renderer);
 			} // end menu scene loop
@@ -281,24 +284,41 @@ int main(int argc, char* argv[]) {
 				player.groundCollisionLeft = SDL_HasIntersection(&player.posRect, &leftGroundRect);
 				player.groundCollisionRight = SDL_HasIntersection(&player.posRect, &rightGroundRect);
 
+				// check for collision with the platforms
+				for(int i = 0; i < platformList.size(); i++){
+					player.platform[i] = SDL_HasIntersection(&player.posRect, &platformList[i].posRect);
+				}
+
+				// set lose condition "fall"
+				if(!SDL_HasIntersection(&player.posRect, &testRect)){
+					gameState = LOSE;
+					level1 = false;
+				}
+
 				// update the background
 				if(player.right == true){
 					X_pos -= (player.speed) * deltaTime;
 					RX_pos -= (player.speed) * deltaTime;
 					LX_pos -= (player.speed) * deltaTime;
 
-					if(testRect.x >= -1024){
+					if(testRect.x >= -2000){
+						player.speed = 300;
 						testRect.x = (int)(X_pos + .5f);
 						rightGroundRect.x = (int)(RX_pos + .5f);
 						leftGroundRect.x = (int)(LX_pos + .5f);
+
+						for(int i = 0; i < platformList.size(); i++){
+							platformList[i].MoveX(-player.speed, deltaTime);
+						}
 					} else {
+						player.speed = 600;
 						X_pos = testRect.x;
 						RX_pos = rightGroundRect.x;
 						LX_pos = leftGroundRect.x;
 					}
 				}
 				if(player.left == true){
-
+					player.speed = 300;
 					X_pos += (player.speed) * deltaTime;
 					RX_pos += (player.speed) * deltaTime;
 					LX_pos += (player.speed) * deltaTime;
@@ -307,29 +327,18 @@ int main(int argc, char* argv[]) {
 						testRect.x = (int)(X_pos + .5f);
 						rightGroundRect.x = (int)(RX_pos + .5f);
 						leftGroundRect.x = (int)(LX_pos + .5f);
+
+						for(int i = 0; i < platformList.size(); i++){
+							platformList[i].MoveX(player.speed, deltaTime);
+						}
 					} else {
+						player.speed = 600;
 						X_pos = testRect.x;
 						RX_pos = rightGroundRect.x;
 						LX_pos = leftGroundRect.x;
 					}
 				}
 				if(player.jump && player.vel_Y < 0){
-					Y_pos += player.vel_Y * deltaTime;
-					RY_pos += player.vel_Y * deltaTime;
-					LY_pos += player.vel_Y * deltaTime;
-
-					if(testRect.y > 768){
-						testRect.y = (int)(Y_pos + .5f);
-						rightGroundRect.y = (int)(RY_pos + .5f);
-						leftGroundRect.y = (int)(LY_pos + .5f);
-					} else {
-						Y_pos = testRect.y;
-						RY_pos = rightGroundRect.y;
-						LY_pos = leftGroundRect.y;
-					}
-				}
-				cout << player.vel_Y << endl;
-				if(player.jump && player.vel_Y >= 0){
 					Y_pos -= player.vel_Y * deltaTime;
 					RY_pos -= player.vel_Y * deltaTime;
 					LY_pos -= player.vel_Y * deltaTime;
@@ -338,13 +347,35 @@ int main(int argc, char* argv[]) {
 						testRect.y = (int)(Y_pos + .5f);
 						rightGroundRect.y = (int)(RY_pos + .5f);
 						leftGroundRect.y = (int)(LY_pos + .5f);
+
+						for(int i = 0; i < platformList.size(); i++){
+							platformList[i].MoveY(-player.vel_Y, deltaTime);
+						}
 					} else {
 						Y_pos = testRect.y;
 						RY_pos = rightGroundRect.y;
 						LY_pos = leftGroundRect.y;
 					}
 				}
+				if((player.jump && player.vel_Y > 0) || (!player.jump && player.falling)){
+					Y_pos -= player.vel_Y * deltaTime;
+					RY_pos -= player.vel_Y * deltaTime;
+					LY_pos -= player.vel_Y * deltaTime;
 
+					if(testRect.y > -1800){
+						testRect.y = (int)(Y_pos + .5f);
+						rightGroundRect.y = (int)(RY_pos + .5f);
+						leftGroundRect.y = (int)(LY_pos + .5f);
+
+						for(int i = 0; i < platformList.size(); i++){
+							platformList[i].MoveY(-player.vel_Y, deltaTime);
+						}
+					} else {
+						Y_pos = testRect.y;
+						RY_pos = rightGroundRect.y;
+						LY_pos = leftGroundRect.y;
+					}
+				}
 
 				// Clear SDL renderer
 				SDL_RenderClear(renderer);
@@ -356,6 +387,11 @@ int main(int argc, char* argv[]) {
 
 				SDL_RenderCopy(renderer, rGTex, NULL, &rightGroundRect);
 				SDL_RenderCopy(renderer, lGTex, NULL, &leftGroundRect);
+
+				// draw the platforms
+				for(int i = 0; i < platformList.size(); i++){
+					platformList[i].Draw(renderer);
+				}
 
 				// draw the player
 				player.Draw(renderer);
@@ -449,7 +485,7 @@ int main(int argc, char* argv[]) {
 				} // end poll event
 
 				// Clear SDL renderer
-				//SDL_RenderClear(renderer);
+				SDL_RenderClear(renderer);
 
 				// put in display images here with SDL_RenderCopy()
 				// Fill the surface white
@@ -459,7 +495,7 @@ int main(int argc, char* argv[]) {
 				SDL_UpdateWindowSurface(window);
 
 				// present the renderer
-				//SDL_RenderPresent(renderer);
+				SDL_RenderPresent(renderer);
 
 			} // end lose scene loop
 
