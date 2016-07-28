@@ -142,6 +142,27 @@ int main(int argc, char* argv[]) {
 	rightGroundRect.w = 1888;
 	rightGroundRect.h = 133;
 
+	string airWayPath = imageDir + "airWay.png";
+
+	// get image for airWay
+	SDL_Texture *airWayTex = NULL;
+	screenSurface = IMG_Load(airWayPath.c_str());
+
+	airWayTex = SDL_CreateTextureFromSurface(renderer, screenSurface);
+
+	SDL_Rect airWayRect;
+	airWayRect.x = 850;
+	airWayRect.y = -300;
+
+	int w, h;
+	SDL_QueryTexture(airWayTex, NULL, NULL, &w, &h);
+	airWayRect.w = w;
+	airWayRect.h = h;
+
+	// airWay x and y pos
+	float airWayX_pos = airWayRect.x;
+	float airWayY_pos = airWayRect.y;
+
 	// back groung x and y pos
 	float X_pos = testRect.x;
 	float Y_pos = testRect.y;
@@ -159,7 +180,25 @@ int main(int argc, char* argv[]) {
 	vector<Platform> platformList;
 
 	// initialize the platforms
-	platformList.push_back(Platform(renderer, imageDir, audioDir, 0, 500));
+	platformList.push_back(Platform(renderer, imageDir, audioDir, 200, 540));
+	platformList.push_back(Platform(renderer, imageDir, audioDir, 620, 500));
+	platformList.push_back(Platform(renderer, imageDir, audioDir, 620, -200));
+	platformList.push_back(Platform(renderer, imageDir, audioDir, 320, -300));
+	platformList.push_back(Platform(renderer, imageDir, audioDir, 20, -400));
+	platformList.push_back(Platform(renderer, imageDir, audioDir, 1220, -200));
+	platformList.push_back(Platform(renderer, imageDir, audioDir, 1620, -300));
+	platformList.push_back(Platform(renderer, imageDir, audioDir, 1220, -400));
+	platformList.push_back(Platform(renderer, imageDir, audioDir, 1220, -600));
+	platformList.push_back(Platform(renderer, imageDir, audioDir, 1220, -800));
+	platformList.push_back(Platform(renderer, imageDir, audioDir, 1620, -700));
+	platformList.push_back(Platform(renderer, imageDir, audioDir, 920, -500));
+	platformList.push_back(Platform(renderer, imageDir, audioDir, 620, -600));
+	platformList.push_back(Platform(renderer, imageDir, audioDir, 320, -700));
+	platformList.push_back(Platform(renderer, imageDir, audioDir, 20, -800));
+	platformList.push_back(Platform(renderer, imageDir, audioDir, 2110, -820));
+	platformList.push_back(Platform(renderer, imageDir, audioDir, 2360, -820));
+	platformList.push_back(Platform(renderer, imageDir, audioDir, 2610, -820));
+	platformList.push_back(Platform(renderer, imageDir, audioDir, 2760, -820));
 
 	// ***** SDL Event to handle input
 	SDL_Event event;
@@ -284,6 +323,13 @@ int main(int argc, char* argv[]) {
 				player.groundCollisionLeft = SDL_HasIntersection(&player.posRect, &leftGroundRect);
 				player.groundCollisionRight = SDL_HasIntersection(&player.posRect, &rightGroundRect);
 
+				// "blow" the player up through the airWay
+				if(SDL_HasIntersection(&player.posRect, &airWayRect)){
+					if(player.vel_Y >= -200){
+						player.vel_Y -= .7f;
+					}
+				}
+
 				// check for collision with the platforms
 				for(int i = 0; i < platformList.size(); i++){
 					player.platform[i] = SDL_HasIntersection(&player.posRect, &platformList[i].posRect);
@@ -300,12 +346,14 @@ int main(int argc, char* argv[]) {
 					X_pos -= (player.speed) * deltaTime;
 					RX_pos -= (player.speed) * deltaTime;
 					LX_pos -= (player.speed) * deltaTime;
+					airWayX_pos -= (player.speed) * deltaTime;
 
 					if(testRect.x >= -2000){
 						player.speed = 300;
 						testRect.x = (int)(X_pos + .5f);
 						rightGroundRect.x = (int)(RX_pos + .5f);
 						leftGroundRect.x = (int)(LX_pos + .5f);
+						airWayRect.x = (int)(airWayX_pos + .5f);
 
 						for(int i = 0; i < platformList.size(); i++){
 							platformList[i].MoveX(-player.speed, deltaTime);
@@ -315,6 +363,7 @@ int main(int argc, char* argv[]) {
 						X_pos = testRect.x;
 						RX_pos = rightGroundRect.x;
 						LX_pos = leftGroundRect.x;
+						airWayX_pos = airWayRect.x;
 					}
 				}
 				if(player.left == true){
@@ -322,11 +371,13 @@ int main(int argc, char* argv[]) {
 					X_pos += (player.speed) * deltaTime;
 					RX_pos += (player.speed) * deltaTime;
 					LX_pos += (player.speed) * deltaTime;
+					airWayX_pos += (player.speed) * deltaTime;
 
 					if(testRect.x <= -2){
 						testRect.x = (int)(X_pos + .5f);
 						rightGroundRect.x = (int)(RX_pos + .5f);
 						leftGroundRect.x = (int)(LX_pos + .5f);
+						airWayRect.x = (int)(airWayX_pos + .5f);
 
 						for(int i = 0; i < platformList.size(); i++){
 							platformList[i].MoveX(player.speed, deltaTime);
@@ -336,17 +387,20 @@ int main(int argc, char* argv[]) {
 						X_pos = testRect.x;
 						RX_pos = rightGroundRect.x;
 						LX_pos = leftGroundRect.x;
+						airWayX_pos = airWayRect.x;
 					}
 				}
 				if(player.jump && player.vel_Y < 0){
 					Y_pos -= player.vel_Y * deltaTime;
 					RY_pos -= player.vel_Y * deltaTime;
 					LY_pos -= player.vel_Y * deltaTime;
+					airWayY_pos -= (player.vel_Y) * deltaTime;
 
 					if(testRect.y < 0){
 						testRect.y = (int)(Y_pos + .5f);
 						rightGroundRect.y = (int)(RY_pos + .5f);
 						leftGroundRect.y = (int)(LY_pos + .5f);
+						airWayRect.y = (int)(airWayY_pos + .5f);
 
 						for(int i = 0; i < platformList.size(); i++){
 							platformList[i].MoveY(-player.vel_Y, deltaTime);
@@ -355,17 +409,20 @@ int main(int argc, char* argv[]) {
 						Y_pos = testRect.y;
 						RY_pos = rightGroundRect.y;
 						LY_pos = leftGroundRect.y;
+						airWayY_pos = airWayRect.y;
 					}
 				}
 				if((player.jump && player.vel_Y > 0) || (!player.jump && player.falling)){
 					Y_pos -= player.vel_Y * deltaTime;
 					RY_pos -= player.vel_Y * deltaTime;
 					LY_pos -= player.vel_Y * deltaTime;
+					airWayY_pos -= (player.vel_Y) * deltaTime;
 
 					if(testRect.y > -1800){
 						testRect.y = (int)(Y_pos + .5f);
 						rightGroundRect.y = (int)(RY_pos + .5f);
 						leftGroundRect.y = (int)(LY_pos + .5f);
+						airWayRect.y = (int)(airWayY_pos + .5f);
 
 						for(int i = 0; i < platformList.size(); i++){
 							platformList[i].MoveY(-player.vel_Y, deltaTime);
@@ -374,6 +431,7 @@ int main(int argc, char* argv[]) {
 						Y_pos = testRect.y;
 						RY_pos = rightGroundRect.y;
 						LY_pos = leftGroundRect.y;
+						airWayY_pos = airWayRect.y;
 					}
 				}
 
@@ -388,6 +446,8 @@ int main(int argc, char* argv[]) {
 				SDL_RenderCopy(renderer, rGTex, NULL, &rightGroundRect);
 				SDL_RenderCopy(renderer, lGTex, NULL, &leftGroundRect);
 
+				SDL_RenderCopy(renderer, airWayTex, NULL, &airWayRect);
+
 				// draw the platforms
 				for(int i = 0; i < platformList.size(); i++){
 					platformList[i].Draw(renderer);
@@ -400,7 +460,6 @@ int main(int argc, char* argv[]) {
 				SDL_RenderPresent(renderer);
 
 			} // end level 1 game loop
-
 			break;
 		case WIN:
 			win = true;
@@ -417,36 +476,36 @@ int main(int argc, char* argv[]) {
 					// check to see if the SDL Window is closed - player clicks X in the Window
 					if (event.type == SDL_QUIT) {
 						quit = true;
-						win = false;
+						level1 = false;
 						break;
 					}
 					switch(event.type){
 					// enter case for button down with this code - case SDL_CONTROLLERBUTTONDOWN: & if (event.cdevice.which == 0)
 					case SDL_MOUSEBUTTONDOWN:
 						if(event.button.button == SDL_BUTTON_LEFT){
-							//gameState = LOSE;
-							//win = false;
+							//use this area to shoot an arrow
+
 						}
 						break;
-
-						mouseX = event.button.x;
-						mouseY = event.button.y;
+					case SDL_KEYDOWN:
+						if(event.key.keysym.sym == SDLK_ESCAPE){
+							quit = true;
+							win = false;
+						}
+						break;
+					case SDL_KEYUP:
+						break;
 					default:break;
 					} // end switch event type
 				} // end poll event
 
 				// Clear SDL renderer
-				//SDL_RenderClear(renderer);
+				SDL_RenderClear(renderer);
 
-				// put in display images here with SDL_RenderCopy()
-				// Fill the surface white
-				SDL_FillRect( screenSurface, NULL, SDL_MapRGB(screenSurface->format, 0, 42, 254));
 
-				// Update the surface
-				SDL_UpdateWindowSurface(window);
 
 				// present the renderer
-				//SDL_RenderPresent(renderer);
+				SDL_RenderPresent(renderer);
 
 			} // end win scene loop
 
@@ -466,20 +525,25 @@ int main(int argc, char* argv[]) {
 					// check to see if the SDL Window is closed - player clicks X in the Window
 					if (event.type == SDL_QUIT) {
 						quit = true;
-						lose = false;
+						level1 = false;
 						break;
 					}
 					switch(event.type){
 					// enter case for button down with this code - case SDL_CONTROLLERBUTTONDOWN: & if (event.cdevice.which == 0)
 					case SDL_MOUSEBUTTONDOWN:
 						if(event.button.button == SDL_BUTTON_LEFT){
-							//quit = true;
-							//lose = false;
+							//use this area to shoot an arrow
+
 						}
 						break;
-
-						mouseX = event.button.x;
-						mouseY = event.button.y;
+					case SDL_KEYDOWN:
+						if(event.key.keysym.sym == SDLK_ESCAPE){
+							quit = true;
+							lose = false;
+						}
+						break;
+					case SDL_KEYUP:
+						break;
 					default:break;
 					} // end switch event type
 				} // end poll event
@@ -487,12 +551,7 @@ int main(int argc, char* argv[]) {
 				// Clear SDL renderer
 				SDL_RenderClear(renderer);
 
-				// put in display images here with SDL_RenderCopy()
-				// Fill the surface white
-				SDL_FillRect( screenSurface, NULL, SDL_MapRGB(screenSurface->format, 0, 42, 254));
 
-				// Update the surface
-				SDL_UpdateWindowSurface(window);
 
 				// present the renderer
 				SDL_RenderPresent(renderer);
@@ -503,8 +562,6 @@ int main(int argc, char* argv[]) {
 		default:break;
 		} // end gameState loop
 	} // end entire game loop
-
-	// The window is open: could enter program loop here (see SDL_PollEvent())
 
 	// Close and destroy the window
 	SDL_DestroyWindow(window);

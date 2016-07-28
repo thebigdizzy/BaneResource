@@ -12,7 +12,11 @@ Player::Player(SDL_Renderer *renderer, string filePath, string audioPath, float 
 
 	speed = 300;
 
-	for (int i = 0; i < 15; i++){
+	health = 100;
+
+	gui = GUI(renderer, filePath, audioPath);
+
+	for (int i = 0; i < max; i++){
 		platform[i] = false;
 	}
 
@@ -29,8 +33,8 @@ Player::Player(SDL_Renderer *renderer, string filePath, string audioPath, float 
 
 	int w, h;
 	SDL_QueryTexture(texture, NULL, NULL, &w, &h);
-	posRect.w = w/10;
-	posRect.h = h/10;
+	posRect.w = w/12;
+	posRect.h = h/12;
 
 	pos_X = x;
 	pos_Y = y;
@@ -65,7 +69,7 @@ void Player::OnButtonPress(SDL_Event event)
 			oldJumpLevel = pos_Y;
 			vel_Y = -200;
 
-			for (int i = 0; i < 15; i++){
+			for (int i = 0; i < max; i++){
 				platform[i] = false;
 			}
 		}
@@ -106,15 +110,22 @@ void Player::Update(float deltaTime){
 	if(pos_X > 1024 - posRect.w){
 		pos_X = 1024 - posRect.w;
 	}
-	if(pos_X < 0){
-		pos_X = 0;
+	if(pos_Y > 600){
+		if(pos_X < 0){
+			pos_X = 0;
+		}
+	} else {
+		if(pos_X < 100){
+			pos_X = 100;
+		}
 	}
 	if(pos_Y > 700 - posRect.h){
 		pos_Y = 700 - posRect.h;
 	}
-	if(pos_Y < 0){
-		pos_Y = 0;
+	if(pos_Y < 300){
+		pos_Y = 300;
 	}
+	cout << pos_Y << endl;
 
 	// set up "gravity" simulator
 	GravitySimulator(deltaTime);
@@ -130,7 +141,7 @@ void Player::GravitySimulator(float deltaTime){
 		pos_Y += vel_Y * deltaTime;
 	}
 
-	for (int i = 0; i < 15; i++){
+	for (int i = 0; i < max; i++){
 		if(platform[i] && (falling)){
 			vel_Y = 0;
 			falling = false;
@@ -147,7 +158,7 @@ void Player::GravitySimulator(float deltaTime){
 	}
 
 	if(!jump && !falling){
-		for (int i = 0; i < 15; i++){
+		for (int i = 0; i < max; i++){
 			if(platform[i] || groundCollisionRight || groundCollisionLeft){
 				falling = false;
 				break;
@@ -169,6 +180,8 @@ void Player::GravitySimulator(float deltaTime){
 
 void Player::Draw(SDL_Renderer *renderer){
 	SDL_RenderCopyEx(renderer, texture, NULL, &posRect, 0.0, &center, SDL_FLIP_NONE);
+
+	gui.Draw(renderer);
 }
 
 void Player::Reset(){

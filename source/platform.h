@@ -51,9 +51,8 @@ public:
 
 		int w, h;
 		SDL_QueryTexture(texture, NULL, NULL, &w, &h);
-		posRect.w = w/10;
-		posRect.h = h/10;
-
+		posRect.w = w/12;
+		posRect.h = h/12;
 	}
 
 	void Draw(SDL_Renderer *renderer){

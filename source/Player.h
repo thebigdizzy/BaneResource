@@ -19,6 +19,7 @@
 //#include "SDL_ttf.h"
 #endif
 
+#include "GUI.h"
 #include <stdio.h>
 #include <iostream>
 #include <vector>
@@ -29,10 +30,18 @@ class Player{
 public:
 	bool active;
 
+	// player health
+	int health;
+
+	// GUI object
+	GUI gui;
+
 	// bools for movement
 	bool left, right, jump, groundCollisionLeft, groundCollisionRight, falling;
 
-	bool platform[15];
+	static const int max = 20;
+
+	bool platform[max];
 
 	// string to find the player image
 	string playerPath;
