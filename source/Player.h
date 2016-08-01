@@ -30,8 +30,21 @@ class Player{
 public:
 	bool active;
 
+	string filepath, audiopath;
+	SDL_Renderer *render;
+
 	// player health
-	int health;
+	float health, maxHealth;
+	int width;
+
+	// ammo variables
+	int ammoCount;
+
+	// arrow pickup 
+	int arrowPU;
+
+	// keep track of which pickup the player hits
+	int pickupNum;
 
 	// GUI object
 	GUI gui;
@@ -39,25 +52,30 @@ public:
 	// bools for movement
 	bool left, right, jump, groundCollisionLeft, groundCollisionRight, falling;
 
+	// bool for the bow pickup
+	bool bow;
+
 	static const int max = 20;
 
 	bool platform[max];
 
 	// string to find the player image
-	string playerPath;
+	string playerPath, rPath, lPath;
 
-	SDL_Texture *texture;
+	SDL_Texture *texture, *rightArm, *leftArm;
 
-	SDL_Rect posRect;
+	SDL_Rect posRect, rightRect, leftRect;
 
 	float xDir, xDirOld;
 
 	float speed;
-	float pos_X, pos_Y;
+	float pos_X, pos_Y, lArmPosX, lArmPosY, rArmPosX, rArmPosY;
 	float vel_Y;
 	float newJumpLevel, oldJumpLevel;
 
-	SDL_Point center;
+	float rAngle, lAngle;
+
+	SDL_Point rShoulder, lShoulder;
 
 	// audio effects here
 
@@ -73,13 +91,23 @@ public:
 	// movement of the mouse
 	void OnMouseEvent(int x, int y);
 
+	void OnMouseButtonPress();
+
 	void Update (float deltaTime);
 
 	void GravitySimulator(float deltaTime);
 
 	void Draw(SDL_Renderer *renderer);
 
+	void BowPickup();
+
+	void DamageTaken();
+
+	void HealthPickup();
+
+	void AmmoPickup();
+
+	void ArrowPickup();
+
 	void Reset();
-
-
 };

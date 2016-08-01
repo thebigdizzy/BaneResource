@@ -8,13 +8,27 @@
 
 Player::Player(SDL_Renderer *renderer, string filePath, string audioPath, float x, float y)
 {
+	filepath = filePath;
+	audiopath = audioPath;
+	render = renderer;
+
 	active = true;
+
+	bow = false;
 
 	speed = 300;
 
-	health = 100;
+	pickupNum = 0;
+
+	health = maxHealth = 100;
+
+	ammoCount = 10;
+
+	arrowPU = 0;
 
 	gui = GUI(renderer, filePath, audioPath);
+
+	width = gui.hMiddleRect.w;
 
 	for (int i = 0; i < max; i++){
 		platform[i] = false;
@@ -30,14 +44,42 @@ Player::Player(SDL_Renderer *renderer, string filePath, string audioPath, float 
 
 	posRect.x = x;
 	posRect.y = y;
+	pos_X = x;
+	pos_Y = y;
 
 	int w, h;
 	SDL_QueryTexture(texture, NULL, NULL, &w, &h);
 	posRect.w = w/12;
 	posRect.h = h/12;
 
-	pos_X = x;
-	pos_Y = y;
+	lPath = filePath + "rightArm.png";
+
+	leftArm = IMG_LoadTexture(renderer, lPath.c_str());
+	SDL_QueryTexture(leftArm, NULL, NULL, &w, &h);
+	leftRect.w = w/12;
+	leftRect.h = h/12;
+
+	lAngle = 0;
+	lShoulder.x = 0;
+	lShoulder.y = leftRect.h/2;
+
+	lArmPosY = leftRect.y = y + 40;
+	lArmPosX = leftRect.x = x + posRect.w;
+
+	rPath = filePath + "leftArm.png";
+
+	rightArm = IMG_LoadTexture(renderer, rPath.c_str());
+	SDL_QueryTexture(rightArm, NULL, NULL, &w, &h);
+	rightRect.w = w/12;
+	rightRect.h = h/12;
+
+	rArmPosY = rightRect.y = y + 40;
+	rArmPosX = rightRect.x = x;
+
+	rAngle = 0;
+	rShoulder.x = 0;
+	rShoulder.y = rightRect.h/2;
+
 	oldJumpLevel = newJumpLevel = y;
 	jump = false;
 	left = false;
@@ -50,9 +92,6 @@ Player::Player(SDL_Renderer *renderer, string filePath, string audioPath, float 
 
 	xDir = 0;
 	xDirOld = 1;
-
-	center.x = posRect.w/2;
-	center.y = posRect.h/2;
 }
 
 void Player::OnButtonPress(SDL_Event event)
@@ -90,8 +129,22 @@ void Player::OnButtonRelease(SDL_Event event){
 	}
 }
 
-void Player::OnMouseEvent(int x, int y){
+void Player::OnMouseButtonPress(){
+	ammoCount--;
+}
 
+void Player::OnMouseEvent(int x, int y){
+	float X = (float)((x) - (rightRect.x));
+	float Y = (float)((y) - (rightRect.y));
+
+	rAngle = atan2(Y, X)*180 / 3.14f;
+
+	X = (float)((x) - (leftRect.x));
+	Y = (float)((y) - (leftRect.y));
+
+	lAngle = atan2(Y, X)*180 / 3.14f;
+
+	cout << lAngle << " " << rAngle << endl;
 }
 
 void Player::Update(float deltaTime){
@@ -125,19 +178,57 @@ void Player::Update(float deltaTime){
 	if(pos_Y < 300){
 		pos_Y = 300;
 	}
-	cout << pos_Y << endl;
+
+	// check for collision with pickups
+	switch (pickupNum)
+	{
+	case 1:
+		ArrowPickup();
+		pickupNum = 0;
+		break;
+	case 2:
+		HealthPickup();
+		pickupNum = 0;
+		break;
+	case 3:
+		AmmoPickup();
+		pickupNum = 0;
+		break;
+	case 4:
+		// bow pickup
+		BowPickup();
+		break;
+	default:
+		break;
+	}
 
 	// set up "gravity" simulator
 	GravitySimulator(deltaTime);
 
+	rArmPosY = pos_Y + 30;
+	rArmPosX = pos_X + 8;
+
+	if(!bow){
+		lArmPosY = pos_Y + 30;
+		lArmPosX = pos_X + posRect.w - 8;
+	} else {
+		lArmPosY = pos_Y + 5;
+		lArmPosX = pos_X + posRect.w - 10;
+	}
+
 	posRect.y = (int)(pos_Y + .5f);
 	posRect.x = (int)(pos_X + .5f);
+
+	rightRect.y = (int)(rArmPosY + .5f);
+	rightRect.x = (int)(rArmPosX + .5f);
+	leftRect.y = (int)(lArmPosY + .5f);
+	leftRect.x = (int)(lArmPosX + .5f);
 }
 
 void Player::GravitySimulator(float deltaTime){
 	// set up "gravity" simulator
 	if(jump || falling){
-		vel_Y += .5f;
+		vel_Y += 200 * deltaTime;
 		pos_Y += vel_Y * deltaTime;
 	}
 
@@ -179,9 +270,64 @@ void Player::GravitySimulator(float deltaTime){
 }
 
 void Player::Draw(SDL_Renderer *renderer){
-	SDL_RenderCopyEx(renderer, texture, NULL, &posRect, 0.0, &center, SDL_FLIP_NONE);
+	SDL_RenderCopy(renderer, texture, NULL, &posRect);
+	SDL_RenderCopyEx(renderer, leftArm, NULL, &leftRect, lAngle, &lShoulder, SDL_FLIP_NONE);
+	SDL_RenderCopyEx(renderer, rightArm, NULL, &rightRect, rAngle, &rShoulder, SDL_FLIP_NONE);
 
-	gui.Draw(renderer);
+	gui.Draw(renderer, ammoCount, arrowPU);
+}
+
+void Player::BowPickup(){
+	bow = true;
+
+	rPath = filepath + "leftArm.png";
+
+	int w, h;
+	rightArm = IMG_LoadTexture(render, rPath.c_str());
+	SDL_QueryTexture(rightArm, NULL, NULL, &w, &h);
+	rightRect.w = w/12;
+	rightRect.h = h/12;
+
+	rArmPosY = rightRect.y = posRect.y;
+	rArmPosX = rightRect.x = posRect.x;
+
+	rShoulder.x = 0;
+	rShoulder.y = rightRect.h/2;
+
+	lPath = filepath + "rightArmBow.png";
+
+	leftArm = IMG_LoadTexture(render, lPath.c_str());
+	SDL_QueryTexture(leftArm, NULL, NULL, &w, &h);
+	leftRect.w = w/12;
+	leftRect.h = h/12;
+
+	lArmPosY = leftRect.y = posRect.y + 50;
+	lArmPosX = leftRect.x = posRect.x + posRect.w - 10;
+
+	lShoulder.x = 0;
+	lShoulder.y = leftRect.h/2;
+}
+
+void Player::DamageTaken()
+{
+	health -= 10;
+	gui.hMiddleRect.w = ((health / maxHealth) * width);
+}
+
+void Player::HealthPickup()
+{
+	health = 100;
+	gui.hMiddleRect.w = ((health / maxHealth) * width);
+}
+
+void Player::AmmoPickup()
+{
+	ammoCount = 10;
+}
+
+void Player::ArrowPickup()
+{
+	arrowPU++;
 }
 
 void Player::Reset(){

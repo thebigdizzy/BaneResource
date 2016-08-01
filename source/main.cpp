@@ -5,6 +5,8 @@
 #include "SDL2_image/SDL_image.h"
 //#include "SDL2_mixer/SDL_mixer.h"
 //#include "SDL2_ttf/SDL_ttf.h"
+
+#include <unistd.h> // sleep
 #endif
 
 #if defined(_WIN32) || (_WIN64)
@@ -24,13 +26,15 @@
 #include <vector>
 #include <stdlib.h>	// srand, rand
 #include <time.h>	// time
-#include <unistd.h> // sleep
 
 // player include
 #include "Player.h"
 
 // platform include
 #include "platform.h"
+
+// pickup include 
+#include "pickUp.h"
 
 using namespace std;
 
@@ -64,6 +68,9 @@ int main(int argc, char* argv[]) {
 
 	// Get the current working directory
 	string s_cwd(getcwd(NULL, 0));
+
+	string imageDir = s_cwd + "\\BaneResource\\images\\";
+	string audioDir = s_cwd + "\\BaneResource\\audio\\";
 
 #endif
 
@@ -159,6 +166,21 @@ int main(int argc, char* argv[]) {
 	airWayRect.w = w;
 	airWayRect.h = h;
 
+	// test the health decrement with this
+	string enemyPath = imageDir + "KingArthur.png";
+	SDL_Texture *enemy = NULL;
+	enemy = IMG_LoadTexture(renderer, enemyPath.c_str());
+	SDL_Rect enemyRect;
+	enemyRect.x = 500;
+	enemyRect.y = 550;
+	SDL_QueryTexture(enemy, NULL, NULL, &w, &h);
+	enemyRect.w = w/12;
+	enemyRect.h = h/12;
+	float eMoveX = enemyRect.x;
+	float eMoveY = enemyRect.y;
+	bool enemyActive = true;
+	float enemyTimer = 0;
+
 	// airWay x and y pos
 	float airWayX_pos = airWayRect.x;
 	float airWayY_pos = airWayRect.y;
@@ -199,6 +221,30 @@ int main(int argc, char* argv[]) {
 	platformList.push_back(Platform(renderer, imageDir, audioDir, 2360, -820));
 	platformList.push_back(Platform(renderer, imageDir, audioDir, 2610, -820));
 	platformList.push_back(Platform(renderer, imageDir, audioDir, 2760, -820));
+
+	// set up a pickup vector
+	vector <PickUp> pickUpList;
+
+	// initialize the arrow pickups
+	pickUpList.push_back(PickUp(renderer, imageDir, 1, 1700, -380));
+	pickUpList.push_back(PickUp(renderer, imageDir, 1, 100, -480));
+	pickUpList.push_back(PickUp(renderer, imageDir, 1, 100, -880));
+
+	// initialize the health pickups
+	pickUpList.push_back(PickUp(renderer, imageDir, 2, 415, -380));
+	pickUpList.push_back(PickUp(renderer, imageDir, 2, 710, -680));
+	pickUpList.push_back(PickUp(renderer, imageDir, 2, 1310, -680));
+	pickUpList.push_back(PickUp(renderer, imageDir, 2, 2200, -880));
+
+	// initialize the ammo pickups
+	pickUpList.push_back(PickUp(renderer, imageDir, 3, 700, 420));
+	pickUpList.push_back(PickUp(renderer, imageDir, 3, 700, -280));
+	pickUpList.push_back(PickUp(renderer, imageDir, 3, 1300, -280));
+	pickUpList.push_back(PickUp(renderer, imageDir, 3, 1000, -580));
+	pickUpList.push_back(PickUp(renderer, imageDir, 3, 2250, -890));
+
+	// initialize the bow pickup
+	pickUpList.push_back(PickUp(renderer, imageDir, 4, 200, 500));
 
 	// ***** SDL Event to handle input
 	SDL_Event event;
@@ -293,7 +339,7 @@ int main(int argc, char* argv[]) {
 					case SDL_MOUSEBUTTONDOWN:
 						if(event.button.button == SDL_BUTTON_LEFT){
 							//use this area to shoot an arrow
-
+							player.OnMouseButtonPress();
 						}
 						break;
 					case SDL_KEYDOWN:
@@ -307,17 +353,25 @@ int main(int argc, char* argv[]) {
 					case SDL_KEYUP:
 						player.OnButtonRelease(event);
 						break;
-
+					case SDL_MOUSEMOTION:
 						mouseX = event.button.x;
 						mouseY = event.button.y;
+						break;
 
-						player.OnMouseEvent(mouseX, mouseY);
 					default:break;
 					} // end switch event type
 				} // end poll event
 
 				// update the player
 				player.Update(deltaTime);
+
+				// update the mouse position
+				player.OnMouseEvent(mouseX, mouseY);
+
+				// update the pickups
+				for (int i = 0; i < pickUpList.size(); i++) {
+					pickUpList[i].update(deltaTime);
+				}
 
 				// check for collison with the ground
 				player.groundCollisionLeft = SDL_HasIntersection(&player.posRect, &leftGroundRect);
@@ -330,15 +384,42 @@ int main(int argc, char* argv[]) {
 					}
 				}
 
+				if (!enemyActive) {
+					enemyTimer += deltaTime;
+					if (enemyTimer > 2) {
+						enemyActive = true;
+						enemyTimer = 0;
+					}
+				}
+
+				// take health away from the player when he collides with the "enemy"
+				if (SDL_HasIntersection(&player.posRect, &enemyRect) && enemyActive) {
+					player.DamageTaken();
+					enemyActive = false;
+				}
+
 				// check for collision with the platforms
 				for(int i = 0; i < platformList.size(); i++){
 					player.platform[i] = SDL_HasIntersection(&player.posRect, &platformList[i].posRect);
 				}
 
+				// check for collision with the pickups
+				for (int i = 0; i < pickUpList.size(); i++) {
+					player.pickupNum = pickUpList[i].playerHit(player.posRect);
+					if(player.pickupNum == 3 && !player.bow){
+						player.pickupNum = 0;
+					}
+					if (player.pickupNum) {
+						break;
+					}
+				}
+
 				// set lose condition "fall"
 				if(!SDL_HasIntersection(&player.posRect, &testRect)){
-					gameState = LOSE;
-					level1 = false;
+					//gameState = LOSE;
+					//level1 = false;
+
+					player.health--;
 				}
 
 				// update the background
@@ -348,6 +429,9 @@ int main(int argc, char* argv[]) {
 					LX_pos -= (player.speed) * deltaTime;
 					airWayX_pos -= (player.speed) * deltaTime;
 
+					// move the test enemy
+					eMoveX -= player.speed * deltaTime;
+
 					if(testRect.x >= -2000){
 						player.speed = 300;
 						testRect.x = (int)(X_pos + .5f);
@@ -355,8 +439,15 @@ int main(int argc, char* argv[]) {
 						leftGroundRect.x = (int)(LX_pos + .5f);
 						airWayRect.x = (int)(airWayX_pos + .5f);
 
+						// move the test enemy
+						enemyRect.x = (int)(eMoveX + .5f);
+
 						for(int i = 0; i < platformList.size(); i++){
 							platformList[i].MoveX(-player.speed, deltaTime);
+						}
+
+						for (int i = 0; i < pickUpList.size(); i++) {
+							pickUpList[i].MoveX(-player.speed, deltaTime);
 						}
 					} else {
 						player.speed = 600;
@@ -364,6 +455,9 @@ int main(int argc, char* argv[]) {
 						RX_pos = rightGroundRect.x;
 						LX_pos = leftGroundRect.x;
 						airWayX_pos = airWayRect.x;
+
+						// move the test enemy
+						eMoveX = enemyRect.x;
 					}
 				}
 				if(player.left == true){
@@ -373,14 +467,24 @@ int main(int argc, char* argv[]) {
 					LX_pos += (player.speed) * deltaTime;
 					airWayX_pos += (player.speed) * deltaTime;
 
+					// move the test enemy
+					eMoveX += player.speed * deltaTime;
+
 					if(testRect.x <= -2){
 						testRect.x = (int)(X_pos + .5f);
 						rightGroundRect.x = (int)(RX_pos + .5f);
 						leftGroundRect.x = (int)(LX_pos + .5f);
 						airWayRect.x = (int)(airWayX_pos + .5f);
 
+						// move the test enemy
+						enemyRect.x = (int)(eMoveX + .5f);
+
 						for(int i = 0; i < platformList.size(); i++){
 							platformList[i].MoveX(player.speed, deltaTime);
+						}
+
+						for (int i = 0; i < pickUpList.size(); i++) {
+							pickUpList[i].MoveX(player.speed, deltaTime);
 						}
 					} else {
 						player.speed = 600;
@@ -388,6 +492,9 @@ int main(int argc, char* argv[]) {
 						RX_pos = rightGroundRect.x;
 						LX_pos = leftGroundRect.x;
 						airWayX_pos = airWayRect.x;
+
+						// move the test enemy
+						eMoveX = enemyRect.x;
 					}
 				}
 				if(player.jump && player.vel_Y < 0){
@@ -396,20 +503,33 @@ int main(int argc, char* argv[]) {
 					LY_pos -= player.vel_Y * deltaTime;
 					airWayY_pos -= (player.vel_Y) * deltaTime;
 
+					// move the test enemy
+					eMoveY -= player.vel_Y * deltaTime;
+
 					if(testRect.y < 0){
 						testRect.y = (int)(Y_pos + .5f);
 						rightGroundRect.y = (int)(RY_pos + .5f);
 						leftGroundRect.y = (int)(LY_pos + .5f);
 						airWayRect.y = (int)(airWayY_pos + .5f);
 
+						// move the test enemy
+						enemyRect.y = (int)(eMoveY + .5f);
+
 						for(int i = 0; i < platformList.size(); i++){
 							platformList[i].MoveY(-player.vel_Y, deltaTime);
+						}
+
+						for (int i = 0; i < pickUpList.size(); i++) {
+							pickUpList[i].MoveY(-player.vel_Y, deltaTime);
 						}
 					} else {
 						Y_pos = testRect.y;
 						RY_pos = rightGroundRect.y;
 						LY_pos = leftGroundRect.y;
 						airWayY_pos = airWayRect.y;
+
+						// move the test enemy
+						eMoveY = enemyRect.y;
 					}
 				}
 				if((player.jump && player.vel_Y > 0) || (!player.jump && player.falling)){
@@ -418,20 +538,33 @@ int main(int argc, char* argv[]) {
 					LY_pos -= player.vel_Y * deltaTime;
 					airWayY_pos -= (player.vel_Y) * deltaTime;
 
+					// move the test enemy
+					eMoveY -= player.vel_Y * deltaTime;
+
 					if(testRect.y > -1800){
 						testRect.y = (int)(Y_pos + .5f);
 						rightGroundRect.y = (int)(RY_pos + .5f);
 						leftGroundRect.y = (int)(LY_pos + .5f);
 						airWayRect.y = (int)(airWayY_pos + .5f);
 
+						// move the test enemy
+						enemyRect.y = (int)(eMoveY + .5f);
+
 						for(int i = 0; i < platformList.size(); i++){
 							platformList[i].MoveY(-player.vel_Y, deltaTime);
+						}
+
+						for (int i = 0; i < pickUpList.size(); i++) {
+							pickUpList[i].MoveY(-player.vel_Y, deltaTime);
 						}
 					} else {
 						Y_pos = testRect.y;
 						RY_pos = rightGroundRect.y;
 						LY_pos = leftGroundRect.y;
 						airWayY_pos = airWayRect.y;
+
+						// move the test enemy
+						eMoveY = enemyRect.y;
 					}
 				}
 
@@ -448,9 +581,17 @@ int main(int argc, char* argv[]) {
 
 				SDL_RenderCopy(renderer, airWayTex, NULL, &airWayRect);
 
+				// draw the test enemy
+				SDL_RenderCopy(renderer, enemy, NULL, &enemyRect);
+
 				// draw the platforms
 				for(int i = 0; i < platformList.size(); i++){
 					platformList[i].Draw(renderer);
+				}
+
+				// draw the pickup items
+				for (int i = 0; i < pickUpList.size(); i++) {
+					pickUpList[i].draw(renderer);
 				}
 
 				// draw the player
