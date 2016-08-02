@@ -286,9 +286,7 @@ int main(int argc, char* argv[]) {
 					// enter case for button down with this code - case SDL_CONTROLLERBUTTONDOWN: & if (event.cdevice.which == 0)
 					case SDL_MOUSEBUTTONDOWN:
 						if(event.button.button == SDL_BUTTON_LEFT){
-							//gameState = LEVEL1;
-							//menu = false;
-							//cout << "mouse button down" << endl;
+
 						}
 						break;
 					case SDL_KEYDOWN:
@@ -314,7 +312,6 @@ int main(int argc, char* argv[]) {
 				// present the renderer
 				SDL_RenderPresent(renderer);
 			} // end menu scene loop
-
 			break;
 		case LEVEL1:
 			level1 = true;
@@ -449,6 +446,10 @@ int main(int argc, char* argv[]) {
 						for (int i = 0; i < pickUpList.size(); i++) {
 							pickUpList[i].MoveX(-player.speed, deltaTime);
 						}
+
+						for (int i = 0; i < player.bulletList.size(); i++){
+							player.bulletList[i].BulletMoveX(-player.speed, deltaTime);
+						}
 					} else {
 						player.speed = 600;
 						X_pos = testRect.x;
@@ -486,6 +487,10 @@ int main(int argc, char* argv[]) {
 						for (int i = 0; i < pickUpList.size(); i++) {
 							pickUpList[i].MoveX(player.speed, deltaTime);
 						}
+
+						for (int i = 0; i < player.bulletList.size(); i++){
+							player.bulletList[i].BulletMoveX(player.speed, deltaTime);
+						}
 					} else {
 						player.speed = 600;
 						X_pos = testRect.x;
@@ -522,6 +527,10 @@ int main(int argc, char* argv[]) {
 						for (int i = 0; i < pickUpList.size(); i++) {
 							pickUpList[i].MoveY(-player.vel_Y, deltaTime);
 						}
+
+						for (int i = 0; i < player.bulletList.size(); i++){
+							player.bulletList[i].BulletMoveY(-player.vel_Y, deltaTime);
+						}
 					} else {
 						Y_pos = testRect.y;
 						RY_pos = rightGroundRect.y;
@@ -556,6 +565,10 @@ int main(int argc, char* argv[]) {
 
 						for (int i = 0; i < pickUpList.size(); i++) {
 							pickUpList[i].MoveY(-player.vel_Y, deltaTime);
+						}
+
+						for (int i = 0; i < player.bulletList.size(); i++){
+							player.bulletList[i].BulletMoveY(-player.vel_Y, deltaTime);
 						}
 					} else {
 						Y_pos = testRect.y;

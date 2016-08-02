@@ -15,6 +15,8 @@ Player::Player(SDL_Renderer *renderer, string filePath, string audioPath, float 
 	active = true;
 
 	bow = false;
+	bowR = false;
+	bowL = false;
 
 	speed = 300;
 
@@ -22,7 +24,7 @@ Player::Player(SDL_Renderer *renderer, string filePath, string audioPath, float 
 
 	health = maxHealth = 100;
 
-	ammoCount = 10;
+	ammoCount = 0;
 
 	arrowPU = 0;
 
@@ -92,6 +94,13 @@ Player::Player(SDL_Renderer *renderer, string filePath, string audioPath, float 
 
 	xDir = 0;
 	xDirOld = 1;
+
+	//create the player's bullet pool
+	for (int i = 0; i < 10; i++)
+	{
+		//add to bulletList
+		bulletList.push_back(Bullet(renderer, filePath, -1000, -1000));
+	}
 }
 
 void Player::OnButtonPress(SDL_Event event)
@@ -130,21 +139,29 @@ void Player::OnButtonRelease(SDL_Event event){
 }
 
 void Player::OnMouseButtonPress(){
-	ammoCount--;
+	if(ammoCount > 0){
+	CreateBullet();
+	}
 }
 
 void Player::OnMouseEvent(int x, int y){
 	float X = (float)((x) - (rightRect.x));
 	float Y = (float)((y) - (rightRect.y));
 
-	rAngle = atan2(Y, X)*180 / 3.14f;
+	if(X < 0){
+		bowL = true;
+		bowR = false;
+	} else {
+		bowL = false;
+		bowR = true;
+	}
+
+	rAngle = atan2(Y, X) * 180 / 3.14f;
 
 	X = (float)((x) - (leftRect.x));
 	Y = (float)((y) - (leftRect.y));
 
-	lAngle = atan2(Y, X)*180 / 3.14f;
-
-	cout << lAngle << " " << rAngle << endl;
+	lAngle = atan2(Y, X) * 180 / 3.14f;
 }
 
 void Player::Update(float deltaTime){
@@ -223,6 +240,16 @@ void Player::Update(float deltaTime){
 	rightRect.x = (int)(rArmPosX + .5f);
 	leftRect.y = (int)(lArmPosY + .5f);
 	leftRect.x = (int)(lArmPosX + .5f);
+
+	// update the bullet list
+	for (int i = 0; i < bulletList.size(); i++){
+		if(bulletList[i].posRect.x > 1024 || bulletList[i].posRect.x < 0 ||
+				bulletList[i].posRect.y > 768 || bulletList[i].posRect.y < 0){
+			bulletList[i].Reset();
+		}
+
+		bulletList[i].Update(deltaTime);
+	}
 }
 
 void Player::GravitySimulator(float deltaTime){
@@ -234,14 +261,14 @@ void Player::GravitySimulator(float deltaTime){
 
 	for (int i = 0; i < max; i++){
 		if(platform[i] && (falling)){
-			vel_Y = 0;
+			vel_Y = -1;
 			falling = false;
 			jump = false;
 			break;
 		}
 
 		if((groundCollisionLeft || groundCollisionRight) && (falling)){
-			vel_Y = 0;
+			vel_Y = -1;
 			falling = false;
 			jump = false;
 			break;
@@ -263,7 +290,7 @@ void Player::GravitySimulator(float deltaTime){
 		falling = true;
 		jump = false;
 	}
-	if(vel_Y < 0){
+	if(vel_Y < -1){
 		falling = false;
 		jump = true;
 	}
@@ -275,6 +302,10 @@ void Player::Draw(SDL_Renderer *renderer){
 	SDL_RenderCopyEx(renderer, rightArm, NULL, &rightRect, rAngle, &rShoulder, SDL_FLIP_NONE);
 
 	gui.Draw(renderer, ammoCount, arrowPU);
+
+	for (int i = 0; i < bulletList.size(); i++){
+		bulletList[i].Draw(renderer);
+	}
 }
 
 void Player::BowPickup(){
@@ -328,6 +359,49 @@ void Player::AmmoPickup()
 void Player::ArrowPickup()
 {
 	arrowPU++;
+}
+
+void Player::CreateBullet()
+{
+	// see if there is a bullet active to fire
+	for (int i = 0; i < bulletList.size(); i++)
+	{
+		if (ammoCount) {
+			// see if the bullet is not active
+			if (bulletList[i].active == false)
+			{
+				ammoCount--;
+				// player the over sound - players fine through levels, must pause for QUIT
+				//Mix_PlayChannel(-1, fire, 0);
+
+				// set bulelt to active
+				bulletList[i].active = true;
+
+				// use some math in the x position to get the bullet close to
+				// the center of the player using player width
+				bulletList[i].posRect.x = (posRect.x + (posRect.w / 2));
+				bulletList[i].posRect.y = (posRect.y + (posRect.h / 2));
+
+				// finishing alighning to the player center using the texture width
+				bulletList[i].posRect.x = bulletList[i].posRect.x - (bulletList[i].posRect.w / 2);
+				bulletList[i].posRect.y = bulletList[i].posRect.y - (bulletList[i].posRect.h / 2);
+
+				// set the x and y position of the bullet's float positions
+				bulletList[i].pos_X = bulletList[i].posRect.x;
+				bulletList[i].pos_Y = bulletList[i].posRect.y;
+
+				bulletList[i].Angle = lAngle;
+
+				// set the starting point of the bullet
+				bulletList[i].sX = bulletList[i].posRect.x;
+				bulletList[i].sY = bulletList[i].posRect.y;
+
+				// once bullet is four , break out of loop
+				break;
+
+			}
+		}
+	}
 }
 
 void Player::Reset(){

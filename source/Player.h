@@ -20,6 +20,7 @@
 #endif
 
 #include "GUI.h"
+#include "bullet.h"
 #include <stdio.h>
 #include <iostream>
 #include <vector>
@@ -32,6 +33,9 @@ public:
 
 	string filepath, audiopath;
 	SDL_Renderer *render;
+
+	// bullet variables
+	vector <Bullet> bulletList;
 
 	// player health
 	float health, maxHealth;
@@ -50,7 +54,7 @@ public:
 	GUI gui;
 
 	// bools for movement
-	bool left, right, jump, groundCollisionLeft, groundCollisionRight, falling;
+	bool left, right, jump, groundCollisionLeft, groundCollisionRight, falling, bowR, bowL;
 
 	// bool for the bow pickup
 	bool bow;
@@ -108,6 +112,8 @@ public:
 	void AmmoPickup();
 
 	void ArrowPickup();
+
+	void CreateBullet();
 
 	void Reset();
 };
