@@ -37,11 +37,22 @@ public:
 	// arrow pickup rectangles
 	SDL_Rect aBackRect, aOneRect, aTwoRect, aThreeRect, ammoRect;
 
+	// cursor rectangles
+	SDL_Rect cursorRect;
+
+	SDL_Texture *cursor;
+
 	GUI(){}
 
 	GUI(SDL_Renderer *renderer, string filePath, string audioPath){
+
+		//cursor
+		string path = filePath + "cursor.png";
+
+		cursor = IMG_LoadTexture(renderer, path.c_str());
+
 		// health bar
-		string path = filePath + "healthTop.png";
+		path = filePath + "healthTop.png";
 
 		hTopTexture = IMG_LoadTexture(renderer, path.c_str());
 
@@ -107,11 +118,19 @@ public:
 
 		Ten = IMG_LoadTexture(renderer, path.c_str());
 
+		// set up the cursor rectangle
+		cursorRect.x = cursorRect.y = 0;
+
+		int w, h;
+		SDL_QueryTexture(cursor, NULL, NULL, &w, &h);
+		cursorRect.w = w/3;
+		cursorRect.h = h/3;
+
 		// set up the health rectangles
 		hTopRect.x = 200;
 		hTopRect.y = 20;
 
-		int w, h;
+
 		SDL_QueryTexture(hTopTexture, NULL, NULL, &w, &h);
 		hTopRect.w = w/3;
 		hTopRect.h = h/3;
@@ -162,6 +181,10 @@ public:
 	}
 
 	void Draw(SDL_Renderer *renderer, int ammoCount, int arrowPU) {
+
+		// draw the cursor
+		SDL_RenderCopy(renderer, cursor, NULL, &cursorRect);
+
 		// draw the health gui
 		SDL_RenderCopy(renderer, hBottomTexture, NULL, &hBottomRect);
 		SDL_RenderCopy(renderer, hMiddleTexture, NULL, &hMiddleRect);

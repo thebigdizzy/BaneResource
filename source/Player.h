@@ -35,7 +35,7 @@ public:
 	SDL_Renderer *render;
 
 	// bullet variables
-	vector <Bullet> bulletList;
+	vector <Bullet> bulletList, arrowList;
 
 	// player health
 	float health, maxHealth;
@@ -46,6 +46,9 @@ public:
 
 	// arrow pickup 
 	int arrowPU;
+	bool canShoot;
+
+	int weaponID;
 
 	// keep track of which pickup the player hits
 	int pickupNum;
@@ -68,7 +71,7 @@ public:
 
 	SDL_Texture *texture, *rightArm, *leftArm;
 
-	SDL_Rect posRect, rightRect, leftRect;
+	SDL_Rect posRect, rightRect, leftRect, feetRect;
 
 	float xDir, xDirOld;
 
@@ -112,6 +115,8 @@ public:
 	void AmmoPickup();
 
 	void ArrowPickup();
+
+	void ChangeWeapon();
 
 	void CreateBullet();
 

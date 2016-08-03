@@ -54,6 +54,11 @@ Player::Player(SDL_Renderer *renderer, string filePath, string audioPath, float 
 	posRect.w = w/12;
 	posRect.h = h/12;
 
+	feetRect.h = 1;
+	feetRect.w = posRect.w;
+	feetRect.x = posRect.x;
+	feetRect.y = posRect.y + posRect.h;
+
 	lPath = filePath + "rightArm.png";
 
 	leftArm = IMG_LoadTexture(renderer, lPath.c_str());
@@ -95,11 +100,21 @@ Player::Player(SDL_Renderer *renderer, string filePath, string audioPath, float 
 	xDir = 0;
 	xDirOld = 1;
 
+	weaponID = 0;
+	canShoot = false;
+
 	//create the player's bullet pool
 	for (int i = 0; i < 10; i++)
 	{
 		//add to bulletList
 		bulletList.push_back(Bullet(renderer, filePath, -1000, -1000));
+	}
+
+	//create the player's bullet pool
+	for (int i = 0; i < 3; i++)
+	{
+		//add to bulletList
+		arrowList.push_back(Bullet(renderer, filePath, -1000, -1000));
 	}
 }
 
@@ -139,12 +154,16 @@ void Player::OnButtonRelease(SDL_Event event){
 }
 
 void Player::OnMouseButtonPress(){
-	if(ammoCount > 0){
-	CreateBullet();
+	if(ammoCount > 0 || arrowPU > 0){
+		CreateBullet();
 	}
 }
 
 void Player::OnMouseEvent(int x, int y){
+
+	gui.cursorRect.x = x - (gui.cursorRect.w/2);
+	gui.cursorRect.y = y + (gui.cursorRect.h) - 15;
+
 	float X = (float)((x) - (rightRect.x));
 	float Y = (float)((y) - (rightRect.y));
 
@@ -240,6 +259,8 @@ void Player::Update(float deltaTime){
 	rightRect.x = (int)(rArmPosX + .5f);
 	leftRect.y = (int)(lArmPosY + .5f);
 	leftRect.x = (int)(lArmPosX + .5f);
+	feetRect.x = posRect.x;
+	feetRect.y = posRect.y + posRect.h;
 
 	// update the bullet list
 	for (int i = 0; i < bulletList.size(); i++){
@@ -250,6 +271,16 @@ void Player::Update(float deltaTime){
 
 		bulletList[i].Update(deltaTime);
 	}
+
+	// update the arrow list
+		for (int i = 0; i < arrowList.size(); i++){
+			if(arrowList[i].posRect.x > 1024 || arrowList[i].posRect.x < 0 ||
+					arrowList[i].posRect.y > 768 || arrowList[i].posRect.y < 0){
+				arrowList[i].Reset();
+			}
+
+			arrowList[i].Update(deltaTime);
+		}
 }
 
 void Player::GravitySimulator(float deltaTime){
@@ -306,6 +337,10 @@ void Player::Draw(SDL_Renderer *renderer){
 	for (int i = 0; i < bulletList.size(); i++){
 		bulletList[i].Draw(renderer);
 	}
+
+	for (int i = 0; i < arrowList.size(); i++){
+		arrowList[i].Draw(renderer);
+	}
 }
 
 void Player::BowPickup(){
@@ -359,48 +394,112 @@ void Player::AmmoPickup()
 void Player::ArrowPickup()
 {
 	arrowPU++;
+	if(arrowPU > 2){
+		canShoot = true;
+	}
+}
+
+void Player::ChangeWeapon(){
+	if(weaponID){
+		weaponID = 0;
+	} else {
+		weaponID = 1;
+	}
 }
 
 void Player::CreateBullet()
 {
-	// see if there is a bullet active to fire
-	for (int i = 0; i < bulletList.size(); i++)
+	switch(weaponID){
+	case 0:
 	{
-		if (ammoCount) {
-			// see if the bullet is not active
-			if (bulletList[i].active == false)
-			{
-				ammoCount--;
-				// player the over sound - players fine through levels, must pause for QUIT
-				//Mix_PlayChannel(-1, fire, 0);
+		// see if there is a bullet active to fire
+		for (int i = 0; i < bulletList.size(); i++)
+		{
+			if (ammoCount) {
+				// see if the bullet is not active
+				if (bulletList[i].active == false)
+				{
+					ammoCount--;
+					// player the over sound - players fine through levels, must pause for QUIT
+					//Mix_PlayChannel(-1, fire, 0);
 
-				// set bulelt to active
-				bulletList[i].active = true;
+					// set bulelt to active
+					bulletList[i].active = true;
 
-				// use some math in the x position to get the bullet close to
-				// the center of the player using player width
-				bulletList[i].posRect.x = (posRect.x + (posRect.w / 2));
-				bulletList[i].posRect.y = (posRect.y + (posRect.h / 2));
+					// use some math in the x position to get the bullet close to
+					// the center of the player using player width
+					bulletList[i].posRect.x = (posRect.x + (posRect.w / 2));
+					bulletList[i].posRect.y = (posRect.y + (posRect.h / 2));
 
-				// finishing alighning to the player center using the texture width
-				bulletList[i].posRect.x = bulletList[i].posRect.x - (bulletList[i].posRect.w / 2);
-				bulletList[i].posRect.y = bulletList[i].posRect.y - (bulletList[i].posRect.h / 2);
+					// finishing alighning to the player center using the texture width
+					bulletList[i].posRect.x = bulletList[i].posRect.x - (bulletList[i].posRect.w / 2);
+					bulletList[i].posRect.y = bulletList[i].posRect.y - (bulletList[i].posRect.h / 2);
 
-				// set the x and y position of the bullet's float positions
-				bulletList[i].pos_X = bulletList[i].posRect.x;
-				bulletList[i].pos_Y = bulletList[i].posRect.y;
+					// set the x and y position of the bullet's float positions
+					bulletList[i].pos_X = bulletList[i].posRect.x;
+					bulletList[i].pos_Y = bulletList[i].posRect.y;
 
-				bulletList[i].Angle = lAngle;
+					bulletList[i].Angle = lAngle;
 
-				// set the starting point of the bullet
-				bulletList[i].sX = bulletList[i].posRect.x;
-				bulletList[i].sY = bulletList[i].posRect.y;
+					// set the starting point of the bullet
+					bulletList[i].sX = bulletList[i].posRect.x;
+					bulletList[i].sY = bulletList[i].posRect.y;
 
-				// once bullet is four , break out of loop
-				break;
+					// once bullet is four , break out of loop
+					break;
 
+				}
 			}
 		}
+		break;
+	}
+	case 1:
+	{
+		// see if there is a bullet active to fire
+		for (int i = 0; i < arrowList.size(); i++)
+		{
+			if (arrowPU && canShoot) {
+				// see if the bullet is not active
+				if (arrowList[i].active == false)
+				{
+					arrowPU--;
+					// player the over sound - players fine through levels, must pause for QUIT
+					//Mix_PlayChannel(-1, fire, 0);
+
+					// set bulelt to active
+					arrowList[i].active = true;
+
+					// change the size of the arrow
+					arrowList[i].posRect.w = bulletList[0].posRect.w * 4;
+					arrowList[i].posRect.h = bulletList[0].posRect.h * 4;
+
+					// use some math in the x position to get the bullet close to
+					// the center of the player using player width
+					arrowList[i].posRect.x = (posRect.x + (posRect.w / 2));
+					arrowList[i].posRect.y = (posRect.y + (posRect.h / 2));
+
+					// finishing alighning to the player center using the texture width
+					arrowList[i].posRect.x = arrowList[i].posRect.x - (arrowList[i].posRect.w / 2);
+					arrowList[i].posRect.y = arrowList[i].posRect.y - (arrowList[i].posRect.h / 2);
+
+					// set the x and y position of the bullet's float positions
+					arrowList[i].pos_X = arrowList[i].posRect.x;
+					arrowList[i].pos_Y = arrowList[i].posRect.y;
+
+					arrowList[i].Angle = lAngle;
+
+					// set the starting point of the bullet
+					arrowList[i].sX = arrowList[i].posRect.x;
+					arrowList[i].sY = arrowList[i].posRect.y;
+
+					// once bullet is four , break out of loop
+					break;
+				}
+			}
+		}
+		break;
+	}
+	default:break;
 	}
 }
 

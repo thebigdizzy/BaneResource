@@ -36,6 +36,9 @@
 // pickup include 
 #include "pickUp.h"
 
+// include the dragon
+#include "Dragon.h"
+
 using namespace std;
 
 // CODE FOR FRAME RATE INDEPENDENCE
@@ -198,6 +201,9 @@ int main(int argc, char* argv[]) {
 	// initialize the Player object
 	Player player(renderer, imageDir, audioDir, 0, 540);
 
+	// initialize the Dragon
+	Dragon dragon(renderer, imageDir, audioDir, 600, -700);
+
 	// set up the platforms in a vector
 	vector<Platform> platformList;
 
@@ -268,6 +274,9 @@ int main(int argc, char* argv[]) {
 		case MENU:
 			menu = true;
 			cout << "menu" << endl;
+
+			SDL_ShowCursor(1);
+
 			while(menu){
 				// set up frame rate for the case using deltaTime
 				thisTime = SDL_GetTicks();
@@ -316,6 +325,9 @@ int main(int argc, char* argv[]) {
 		case LEVEL1:
 			level1 = true;
 			cout << "level 1" << endl;
+
+			SDL_ShowCursor(0);
+
 			// start level 1 game loop
 			while(level1){
 				// set up frame rate for the case using deltaTime
@@ -338,11 +350,19 @@ int main(int argc, char* argv[]) {
 							//use this area to shoot an arrow
 							player.OnMouseButtonPress();
 						}
+						if(event.button.button == SDL_BUTTON_RIGHT){
+							//use this area to shoot an arrow
+							player.ChangeWeapon();
+						}
 						break;
 					case SDL_KEYDOWN:
 						if(event.key.keysym.sym == SDLK_ESCAPE){
 							quit = true;
 							level1 = false;
+						}
+
+						if(event.key.keysym.sym == SDLK_RETURN){
+							dragon.dropIn = true;
 						}
 						// send the button info to the player object
 						player.OnButtonPress(event);
@@ -362,6 +382,9 @@ int main(int argc, char* argv[]) {
 				// update the player
 				player.Update(deltaTime);
 
+				// update the dragon
+				dragon.Update(deltaTime);
+
 				// update the mouse position
 				player.OnMouseEvent(mouseX, mouseY);
 
@@ -371,8 +394,8 @@ int main(int argc, char* argv[]) {
 				}
 
 				// check for collison with the ground
-				player.groundCollisionLeft = SDL_HasIntersection(&player.posRect, &leftGroundRect);
-				player.groundCollisionRight = SDL_HasIntersection(&player.posRect, &rightGroundRect);
+				player.groundCollisionLeft = SDL_HasIntersection(&player.feetRect, &leftGroundRect);
+				player.groundCollisionRight = SDL_HasIntersection(&player.feetRect, &rightGroundRect);
 
 				// "blow" the player up through the airWay
 				if(SDL_HasIntersection(&player.posRect, &airWayRect)){
@@ -397,7 +420,7 @@ int main(int argc, char* argv[]) {
 
 				// check for collision with the platforms
 				for(int i = 0; i < platformList.size(); i++){
-					player.platform[i] = SDL_HasIntersection(&player.posRect, &platformList[i].posRect);
+					player.platform[i] = SDL_HasIntersection(&player.feetRect, &platformList[i].posRect);
 				}
 
 				// check for collision with the pickups
@@ -589,6 +612,11 @@ int main(int argc, char* argv[]) {
 				// display the test background
 				SDL_RenderCopy(renderer, testTex, NULL, &testRect);
 
+				// draw the platforms
+				for(int i = 0; i < platformList.size() - 4; i++){
+					platformList[i].Draw(renderer);
+				}
+
 				SDL_RenderCopy(renderer, rGTex, NULL, &rightGroundRect);
 				SDL_RenderCopy(renderer, lGTex, NULL, &leftGroundRect);
 
@@ -597,15 +625,12 @@ int main(int argc, char* argv[]) {
 				// draw the test enemy
 				SDL_RenderCopy(renderer, enemy, NULL, &enemyRect);
 
-				// draw the platforms
-				for(int i = 0; i < platformList.size(); i++){
-					platformList[i].Draw(renderer);
-				}
-
 				// draw the pickup items
 				for (int i = 0; i < pickUpList.size(); i++) {
 					pickUpList[i].draw(renderer);
 				}
+
+				dragon.Draw(renderer);
 
 				// draw the player
 				player.Draw(renderer);
@@ -618,6 +643,9 @@ int main(int argc, char* argv[]) {
 		case WIN:
 			win = true;
 			cout << "win" << endl;
+
+			SDL_ShowCursor(1);
+
 			// start win scene loop
 			while(win){
 				// set up frame rate for the case using deltaTime
@@ -667,6 +695,9 @@ int main(int argc, char* argv[]) {
 		case LOSE:
 			lose = true;
 			cout << "lose" << endl;
+
+			SDL_ShowCursor(1);
+
 			// start lose scene loop
 			while(lose){
 				// set up frame rate for the case using deltaTime
