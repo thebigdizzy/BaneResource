@@ -98,19 +98,23 @@ public:
 			{
 			case 1:
 				// return 1 for arrow pickup
+				//cout << "hit 1" << endl;
 				return 1;
 				break;
 			case 2:
 				startTimer = true;
+				//cout << "hit 2" << endl;
 				// return 2 for health pickup
 				return 2;
 				break;
 			case 3:
 				startTimer = true;
+				//cout << "hit 3" << endl;
 				// return 3 for ammo pickup
 				return 3;
 				break;
 			case 4:
+				//cout << "hit 4" << endl;
 				// return 4 for bow pickup
 				return 4;
 				break;
@@ -120,7 +124,7 @@ public:
 		return 0;
 	}
 
-	void reset() {
+	void respawn() {
 		active = true;
 		timer = 0;
 		startTimer = false;
@@ -137,7 +141,7 @@ public:
 			timer += deltaTime;
 			if (timer > 8) {
 				// reset the pickup item
-				reset();
+				respawn();
 			}
 		}
 	}
@@ -153,5 +157,13 @@ public:
 
 		if (active)
 			posRect.x = (int)(pos_X + .5f);
+	}
+
+	void reset(){
+		active = true;
+		timer = 0;
+		startTimer = false;
+		posRect.x = pos_X = sX;
+		posRect.y = pos_Y = sY;
 	}
 };

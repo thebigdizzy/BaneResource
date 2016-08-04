@@ -14,6 +14,8 @@ Player::Player(SDL_Renderer *renderer, string filePath, string audioPath, float 
 
 	active = true;
 
+	bossMode = false;
+
 	bow = false;
 	bowR = false;
 	bowL = false;
@@ -199,38 +201,40 @@ void Player::Update(float deltaTime){
 	if(pos_X > 1024 - posRect.w){
 		pos_X = 1024 - posRect.w;
 	}
-	if(pos_Y > 600){
-		if(pos_X < 0){
-			pos_X = 0;
-		}
-	} else {
-		if(pos_X < 100){
-			pos_X = 100;
-		}
+
+	if(pos_X < 100){
+		pos_X = 100;
 	}
-	if(pos_Y > 700 - posRect.h){
-		pos_Y = 700 - posRect.h;
-	}
-	if(pos_Y < 300){
-		pos_Y = 300;
+
+	if(!bossMode){
+		if(pos_Y > 700 - posRect.h){
+			pos_Y = 700 - posRect.h;
+		}
+		if(pos_Y < 300){
+			pos_Y = 300;
+		}
 	}
 
 	// check for collision with pickups
 	switch (pickupNum)
 	{
 	case 1:
+		cout << "hit 1" << endl;
 		ArrowPickup();
 		pickupNum = 0;
 		break;
 	case 2:
+		cout << "hit 2" << endl;
 		HealthPickup();
 		pickupNum = 0;
 		break;
 	case 3:
+		cout << "hit 3" << endl;
 		AmmoPickup();
 		pickupNum = 0;
 		break;
 	case 4:
+		cout << "hit 4" << endl;
 		// bow pickup
 		BowPickup();
 		break;
@@ -273,14 +277,14 @@ void Player::Update(float deltaTime){
 	}
 
 	// update the arrow list
-		for (int i = 0; i < arrowList.size(); i++){
-			if(arrowList[i].posRect.x > 1024 || arrowList[i].posRect.x < 0 ||
-					arrowList[i].posRect.y > 768 || arrowList[i].posRect.y < 0){
-				arrowList[i].Reset();
-			}
-
-			arrowList[i].Update(deltaTime);
+	for (int i = 0; i < arrowList.size(); i++){
+		if(arrowList[i].posRect.x > 1024 || arrowList[i].posRect.x < 0 ||
+				arrowList[i].posRect.y > 768 || arrowList[i].posRect.y < 0){
+			arrowList[i].Reset();
 		}
+
+		arrowList[i].Update(deltaTime);
+	}
 }
 
 void Player::GravitySimulator(float deltaTime){
@@ -288,6 +292,10 @@ void Player::GravitySimulator(float deltaTime){
 	if(jump || falling){
 		vel_Y += 200 * deltaTime;
 		pos_Y += vel_Y * deltaTime;
+	}
+
+	if(platform[max - 5] || platform[max - 4] || platform[max - 3] || platform[max - 2] || platform[max - 1]){
+		bossMode = true;
 	}
 
 	for (int i = 0; i < max; i++){

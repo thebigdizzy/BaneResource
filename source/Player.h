@@ -30,6 +30,7 @@ using namespace std;
 class Player{
 public:
 	bool active;
+	bool bossMode;
 
 	string filepath, audiopath;
 	SDL_Renderer *render;

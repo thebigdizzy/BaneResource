@@ -252,6 +252,9 @@ int main(int argc, char* argv[]) {
 	// initialize the bow pickup
 	pickUpList.push_back(PickUp(renderer, imageDir, 4, 200, 500));
 
+	// bool for initializing boss Mode
+	bool bossInit = true;
+
 	// ***** SDL Event to handle input
 	SDL_Event event;
 
@@ -362,7 +365,7 @@ int main(int argc, char* argv[]) {
 						}
 
 						if(event.key.keysym.sym == SDLK_RETURN){
-							dragon.dropIn = true;
+
 						}
 						// send the button info to the player object
 						player.OnButtonPress(event);
@@ -396,6 +399,15 @@ int main(int argc, char* argv[]) {
 				// check for collison with the ground
 				player.groundCollisionLeft = SDL_HasIntersection(&player.feetRect, &leftGroundRect);
 				player.groundCollisionRight = SDL_HasIntersection(&player.feetRect, &rightGroundRect);
+
+				// check for collision with the player's arrows and the dragon
+				for (int i = 0; i < player.bulletList.size(); i++){
+					if(SDL_HasIntersection(&player.bulletList[i].posRect, &dragon.posRect)){
+						player.bulletList[i].Reset();
+						dragon.state = dragon.GetHit;
+						dragon.health -= 10;
+					}
+				}
 
 				// "blow" the player up through the airWay
 				if(SDL_HasIntersection(&player.posRect, &airWayRect)){
@@ -441,166 +453,192 @@ int main(int argc, char* argv[]) {
 
 					player.health--;
 				}
+				if(!player.bossMode){
+					// update the background
+					if(player.right == true){
+						X_pos -= (player.speed) * deltaTime;
+						RX_pos -= (player.speed) * deltaTime;
+						LX_pos -= (player.speed) * deltaTime;
+						airWayX_pos -= (player.speed) * deltaTime;
 
-				// update the background
-				if(player.right == true){
-					X_pos -= (player.speed) * deltaTime;
-					RX_pos -= (player.speed) * deltaTime;
-					LX_pos -= (player.speed) * deltaTime;
-					airWayX_pos -= (player.speed) * deltaTime;
+						// move the test enemy
+						eMoveX -= player.speed * deltaTime;
 
-					// move the test enemy
-					eMoveX -= player.speed * deltaTime;
+						if(testRect.x >= -2000){
+							player.speed = 300;
+							testRect.x = (int)(X_pos + .5f);
+							rightGroundRect.x = (int)(RX_pos + .5f);
+							leftGroundRect.x = (int)(LX_pos + .5f);
+							airWayRect.x = (int)(airWayX_pos + .5f);
 
-					if(testRect.x >= -2000){
+							// move the test enemy
+							enemyRect.x = (int)(eMoveX + .5f);
+
+							for(int i = 0; i < platformList.size(); i++){
+								platformList[i].MoveX(-player.speed, deltaTime);
+							}
+
+							for (int i = 0; i < pickUpList.size(); i++) {
+								pickUpList[i].MoveX(-player.speed, deltaTime);
+							}
+
+							for (int i = 0; i < player.bulletList.size(); i++){
+								player.bulletList[i].BulletMoveX(-player.speed, deltaTime);
+							}
+						} else {
+							player.speed = 600;
+							X_pos = testRect.x;
+							RX_pos = rightGroundRect.x;
+							LX_pos = leftGroundRect.x;
+							airWayX_pos = airWayRect.x;
+
+							// move the test enemy
+							eMoveX = enemyRect.x;
+						}
+					}
+					if(player.left == true){
 						player.speed = 300;
-						testRect.x = (int)(X_pos + .5f);
-						rightGroundRect.x = (int)(RX_pos + .5f);
-						leftGroundRect.x = (int)(LX_pos + .5f);
-						airWayRect.x = (int)(airWayX_pos + .5f);
+						X_pos += (player.speed) * deltaTime;
+						RX_pos += (player.speed) * deltaTime;
+						LX_pos += (player.speed) * deltaTime;
+						airWayX_pos += (player.speed) * deltaTime;
 
 						// move the test enemy
-						enemyRect.x = (int)(eMoveX + .5f);
+						eMoveX += player.speed * deltaTime;
 
-						for(int i = 0; i < platformList.size(); i++){
-							platformList[i].MoveX(-player.speed, deltaTime);
-						}
+						if(testRect.x <= -2){
+							testRect.x = (int)(X_pos + .5f);
+							rightGroundRect.x = (int)(RX_pos + .5f);
+							leftGroundRect.x = (int)(LX_pos + .5f);
+							airWayRect.x = (int)(airWayX_pos + .5f);
 
-						for (int i = 0; i < pickUpList.size(); i++) {
-							pickUpList[i].MoveX(-player.speed, deltaTime);
-						}
+							// move the test enemy
+							enemyRect.x = (int)(eMoveX + .5f);
 
-						for (int i = 0; i < player.bulletList.size(); i++){
-							player.bulletList[i].BulletMoveX(-player.speed, deltaTime);
+							for(int i = 0; i < platformList.size(); i++){
+								platformList[i].MoveX(player.speed, deltaTime);
+							}
+
+							for (int i = 0; i < pickUpList.size(); i++) {
+								pickUpList[i].MoveX(player.speed, deltaTime);
+							}
+
+							for (int i = 0; i < player.bulletList.size(); i++){
+								player.bulletList[i].BulletMoveX(player.speed, deltaTime);
+							}
+						} else {
+							player.speed = 600;
+							X_pos = testRect.x;
+							RX_pos = rightGroundRect.x;
+							LX_pos = leftGroundRect.x;
+							airWayX_pos = airWayRect.x;
+
+							// move the test enemy
+							eMoveX = enemyRect.x;
 						}
-					} else {
+					}
+					if(player.jump && player.vel_Y < 0){
+						Y_pos -= player.vel_Y * deltaTime;
+						RY_pos -= player.vel_Y * deltaTime;
+						LY_pos -= player.vel_Y * deltaTime;
+						airWayY_pos -= (player.vel_Y) * deltaTime;
+
+						// move the test enemy
+						eMoveY -= player.vel_Y * deltaTime;
+
+						if(testRect.y < 0){
+							testRect.y = (int)(Y_pos + .5f);
+							rightGroundRect.y = (int)(RY_pos + .5f);
+							leftGroundRect.y = (int)(LY_pos + .5f);
+							airWayRect.y = (int)(airWayY_pos + .5f);
+
+							// move the test enemy
+							enemyRect.y = (int)(eMoveY + .5f);
+
+							for(int i = 0; i < platformList.size(); i++){
+								platformList[i].MoveY(-player.vel_Y, deltaTime);
+							}
+
+							for (int i = 0; i < pickUpList.size(); i++) {
+								pickUpList[i].MoveY(-player.vel_Y, deltaTime);
+							}
+
+							for (int i = 0; i < player.bulletList.size(); i++){
+								player.bulletList[i].BulletMoveY(-player.vel_Y, deltaTime);
+							}
+						} else {
+							Y_pos = testRect.y;
+							RY_pos = rightGroundRect.y;
+							LY_pos = leftGroundRect.y;
+							airWayY_pos = airWayRect.y;
+
+							// move the test enemy
+							eMoveY = enemyRect.y;
+						}
+					}
+					if((player.jump && player.vel_Y > 0) || (!player.jump && player.falling)){
+						Y_pos -= player.vel_Y * deltaTime;
+						RY_pos -= player.vel_Y * deltaTime;
+						LY_pos -= player.vel_Y * deltaTime;
+						airWayY_pos -= (player.vel_Y) * deltaTime;
+
+						// move the test enemy
+						eMoveY -= player.vel_Y * deltaTime;
+
+						if(testRect.y > -1800){
+							testRect.y = (int)(Y_pos + .5f);
+							rightGroundRect.y = (int)(RY_pos + .5f);
+							leftGroundRect.y = (int)(LY_pos + .5f);
+							airWayRect.y = (int)(airWayY_pos + .5f);
+
+							// move the test enemy
+							enemyRect.y = (int)(eMoveY + .5f);
+
+							for(int i = 0; i < platformList.size(); i++){
+								platformList[i].MoveY(-player.vel_Y, deltaTime);
+							}
+
+							for (int i = 0; i < pickUpList.size(); i++) {
+								pickUpList[i].MoveY(-player.vel_Y, deltaTime);
+							}
+
+							for (int i = 0; i < player.bulletList.size(); i++){
+								player.bulletList[i].BulletMoveY(-player.vel_Y, deltaTime);
+							}
+						} else {
+							Y_pos = testRect.y;
+							RY_pos = rightGroundRect.y;
+							LY_pos = leftGroundRect.y;
+							airWayY_pos = airWayRect.y;
+
+							// move the test enemy
+							eMoveY = enemyRect.y;
+						}
+					}
+				} else {
+					if(bossInit){
+						bossInit = false;
+						dragon.state = dragon.DropIn;
 						player.speed = 600;
-						X_pos = testRect.x;
-						RX_pos = rightGroundRect.x;
-						LX_pos = leftGroundRect.x;
-						airWayX_pos = airWayRect.x;
+						player.posRect.x = player.pos_X = 105;
+						player.posRect.y = player.pos_Y = 610;
+						testRect.x = X_pos = -2048;
+						testRect.y = 0;
 
-						// move the test enemy
-						eMoveX = enemyRect.x;
-					}
-				}
-				if(player.left == true){
-					player.speed = 300;
-					X_pos += (player.speed) * deltaTime;
-					RX_pos += (player.speed) * deltaTime;
-					LX_pos += (player.speed) * deltaTime;
-					airWayX_pos += (player.speed) * deltaTime;
+						pickUpList[6].posRect.y = pickUpList[6].pos_Y = 670;
+						pickUpList[6].posRect.x = pickUpList[6].pos_X = 200;
 
-					// move the test enemy
-					eMoveX += player.speed * deltaTime;
+						pickUpList[11].posRect.y = pickUpList[11].pos_Y = 660;
+						pickUpList[11].posRect.x = pickUpList[11].pos_X = pickUpList[6].posRect.w + 200;
 
-					if(testRect.x <= -2){
-						testRect.x = (int)(X_pos + .5f);
-						rightGroundRect.x = (int)(RX_pos + .5f);
-						leftGroundRect.x = (int)(LX_pos + .5f);
-						airWayRect.x = (int)(airWayX_pos + .5f);
-
-						// move the test enemy
-						enemyRect.x = (int)(eMoveX + .5f);
-
-						for(int i = 0; i < platformList.size(); i++){
-							platformList[i].MoveX(player.speed, deltaTime);
+						for(int i = 15; i < platformList.size(); i++){
+							platformList[i].posRect.y = 715;
 						}
-
-						for (int i = 0; i < pickUpList.size(); i++) {
-							pickUpList[i].MoveX(player.speed, deltaTime);
-						}
-
-						for (int i = 0; i < player.bulletList.size(); i++){
-							player.bulletList[i].BulletMoveX(player.speed, deltaTime);
-						}
-					} else {
-						player.speed = 600;
-						X_pos = testRect.x;
-						RX_pos = rightGroundRect.x;
-						LX_pos = leftGroundRect.x;
-						airWayX_pos = airWayRect.x;
-
-						// move the test enemy
-						eMoveX = enemyRect.x;
-					}
-				}
-				if(player.jump && player.vel_Y < 0){
-					Y_pos -= player.vel_Y * deltaTime;
-					RY_pos -= player.vel_Y * deltaTime;
-					LY_pos -= player.vel_Y * deltaTime;
-					airWayY_pos -= (player.vel_Y) * deltaTime;
-
-					// move the test enemy
-					eMoveY -= player.vel_Y * deltaTime;
-
-					if(testRect.y < 0){
-						testRect.y = (int)(Y_pos + .5f);
-						rightGroundRect.y = (int)(RY_pos + .5f);
-						leftGroundRect.y = (int)(LY_pos + .5f);
-						airWayRect.y = (int)(airWayY_pos + .5f);
-
-						// move the test enemy
-						enemyRect.y = (int)(eMoveY + .5f);
-
-						for(int i = 0; i < platformList.size(); i++){
-							platformList[i].MoveY(-player.vel_Y, deltaTime);
-						}
-
-						for (int i = 0; i < pickUpList.size(); i++) {
-							pickUpList[i].MoveY(-player.vel_Y, deltaTime);
-						}
-
-						for (int i = 0; i < player.bulletList.size(); i++){
-							player.bulletList[i].BulletMoveY(-player.vel_Y, deltaTime);
-						}
-					} else {
-						Y_pos = testRect.y;
-						RY_pos = rightGroundRect.y;
-						LY_pos = leftGroundRect.y;
-						airWayY_pos = airWayRect.y;
-
-						// move the test enemy
-						eMoveY = enemyRect.y;
-					}
-				}
-				if((player.jump && player.vel_Y > 0) || (!player.jump && player.falling)){
-					Y_pos -= player.vel_Y * deltaTime;
-					RY_pos -= player.vel_Y * deltaTime;
-					LY_pos -= player.vel_Y * deltaTime;
-					airWayY_pos -= (player.vel_Y) * deltaTime;
-
-					// move the test enemy
-					eMoveY -= player.vel_Y * deltaTime;
-
-					if(testRect.y > -1800){
-						testRect.y = (int)(Y_pos + .5f);
-						rightGroundRect.y = (int)(RY_pos + .5f);
-						leftGroundRect.y = (int)(LY_pos + .5f);
-						airWayRect.y = (int)(airWayY_pos + .5f);
-
-						// move the test enemy
-						enemyRect.y = (int)(eMoveY + .5f);
-
-						for(int i = 0; i < platformList.size(); i++){
-							platformList[i].MoveY(-player.vel_Y, deltaTime);
-						}
-
-						for (int i = 0; i < pickUpList.size(); i++) {
-							pickUpList[i].MoveY(-player.vel_Y, deltaTime);
-						}
-
-						for (int i = 0; i < player.bulletList.size(); i++){
-							player.bulletList[i].BulletMoveY(-player.vel_Y, deltaTime);
-						}
-					} else {
-						Y_pos = testRect.y;
-						RY_pos = rightGroundRect.y;
-						LY_pos = leftGroundRect.y;
-						airWayY_pos = airWayRect.y;
-
-						// move the test enemy
-						eMoveY = enemyRect.y;
+						platformList[15].posRect.x = 100;
+						platformList[16].posRect.x = platformList[15].posRect.w + 100;
+						platformList[17].posRect.x = (platformList[15].posRect.w*2) + 100;
+						platformList[18].posRect.x = (platformList[15].posRect.w*3) + 100;
+						platformList[19].posRect.x = (platformList[15].posRect.w*4) + 100;
 					}
 				}
 

@@ -28,18 +28,36 @@ using namespace std;
 class Dragon {
 public:
 	bool active;
-	bool dropIn;
+
+	bool mRight, mLeft, mUp, mDown;
 	SDL_Rect posRect;
 	SDL_Texture *texture;
 	float posX, posY;
+
+	int health;
+
+	// the amount of time the
+	int turns;
+
+	enum State {Idle, DropIn, MoveLtoR, GetHit};
+
+	State state;
 
 	Dragon(){}
 
 	Dragon(SDL_Renderer *renderer, string filePath, string audioPath, int x, int y){
 		active = true;
 
-		dropIn = false;
+		mLeft = true;
+		mRight = false;
+		mUp = true;
+		mDown = false;
 
+		health = 100;
+
+		turns = 0;
+
+		state = Idle;
 		posRect.x = posX = x;
 		posRect.y = posY = y;
 
@@ -56,20 +74,79 @@ public:
 		SDL_RenderCopy(renderer, texture, NULL, &posRect);
 	}
 
-	void DropIn(float deltaTime){
-		if(posRect.y < 100){
+	void DropInFunc(float deltaTime){
+		if(posRect.y < 250){
 			posY += 200 *deltaTime;
 			posRect.y = (int)(posY + .5f);
 		}
-		if(posRect.y >= 100){
-			posY = 100;
+		if(posRect.y >= 250){
+			posY = 250;
 			posRect.y = (int)posY;
+			state = MoveLtoR;
+		}
+	}
+
+	void MoveSideToSide(float deltaTime){
+		if(active){
+			if(mLeft && posX < 500){
+				mRight = true;
+				mLeft = false;
+			}
+			if(mRight && posX > 680){
+				mLeft = true;
+				mRight = false;
+			}
+			if(mLeft && !mRight){
+				posX -= 100 * deltaTime;
+				posRect.x = (int)(posX + .5f);
+			}
+			if(mRight && !mLeft){
+				posX += 100 * deltaTime;
+				posRect.x = (int)(posX + .5f);
+			}
+		}
+	}
+
+	void GotHit(float deltaTime){
+		if(posY < 200){
+			mDown = true;
+			mUp = false;
+		}
+		if(mDown){
+			posY += 300 * deltaTime;
+			posRect.y = (int)(posY + .5f);
+			if(posRect.y >= 250){
+				posRect.y = posY = 250;
+				mDown = false;
+				mUp = true;
+				state = MoveLtoR;
+			}
+		} else if(mUp){
+			posY -= 300 * deltaTime;
+			posRect.y = (int)(posY + .5f);
 		}
 	}
 
 	void Update(float deltaTime){
-		if(dropIn){
-			DropIn(deltaTime);
+
+		if(health <= 0){
+			active = false;
+		}
+
+		switch(state){
+		case Idle:
+			// do nothing
+			break;
+		case DropIn:
+			DropInFunc(deltaTime);
+			break;
+		case MoveLtoR:
+			MoveSideToSide(deltaTime);
+			break;
+		case GetHit:
+			GotHit(deltaTime);
+			break;
+		default:break;
 		}
 	}
 };
