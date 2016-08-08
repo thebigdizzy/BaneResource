@@ -31,6 +31,8 @@ class Player{
 public:
 	bool active;
 	bool bossMode;
+	bool shootingTime;
+	float sTimer;
 
 	string filepath, audiopath;
 	SDL_Renderer *render;

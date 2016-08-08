@@ -8,8 +8,8 @@
 #if defined(__APPLE__)
 #include "SDL2/SDL.h"
 #include "SDL2_image/SDL_image.h"
- //#include "SDL2_mixer/SDL_mixer.h"
- //#include "SDL2_ttf/SDL_ttf.h"
+//#include "SDL2_mixer/SDL_mixer.h"
+//#include "SDL2_ttf/SDL_ttf.h"
 #endif
 
 #if defined(_WIN32) || (_WIN64)
@@ -34,8 +34,8 @@ public:
 	static const int max = 3;
 
 	bool mRight, mLeft, mUp, mDown;
-	SDL_Rect posRect;
-	SDL_Texture *texture;
+	SDL_Rect posRect, hitRect;
+	SDL_Texture *texture, *hitTexture;
 	float posX, posY;
 	float fireballTimer;
 
@@ -73,6 +73,9 @@ public:
 		posRect.x = posX = x;
 		posRect.y = posY = y;
 
+		hitRect.x = posRect.x + 50;
+		hitRect.y = posRect.y + 50;
+
 		fireballTimer = 0;
 
 		string path = filePath + "Dragon.png";
@@ -83,6 +86,12 @@ public:
 		posRect.w = w / 3;
 		posRect.h = h / 3;
 
+		path = filePath + "diamond.png";
+		hitTexture = IMG_LoadTexture(renderer, path.c_str());
+		SDL_QueryTexture(hitTexture, NULL, NULL, &w, &h);
+		hitRect.w = w;
+		hitRect.h = h;
+
 		for (int i = 0; i < max; i++) {
 			fireball.push_back(new FireBall(renderer, filePath, -1000, -1000));
 		}
@@ -90,7 +99,8 @@ public:
 
 	void Draw(SDL_Renderer *renderer) {
 		SDL_RenderCopy(renderer, texture, NULL, &posRect);
-		cout << health << endl;
+		SDL_RenderCopy(renderer, hitTexture, NULL, &hitRect);
+		//cout << health << endl;
 
 		for (int i = 0; i < max; i++) {
 			if (fireball[i]->active) {
@@ -152,6 +162,7 @@ public:
 	}
 
 	void GotHit(float deltaTime) {
+
 		if (posY < 225) {
 			mDown = true;
 			mUp = false;
@@ -173,7 +184,6 @@ public:
 	}
 
 	void Update(float deltaTime, SDL_Rect PlayerRect) {
-
 		// if the dragons health is lower than or equal to 0, put in FlyAway mode
 		if (health <= 0) {
 			active = false;
@@ -202,8 +212,8 @@ public:
 			// increment the timer for the fireballs
 			fireballTimer += deltaTime;
 
-			// shoot a fireball if the timer hits 4 seconds and reset the timer
-			if (fireballTimer > (rand() % 2) + 3) {
+			// shoot a fireball if the timer hits a random number of seconds seconds and reset the timer
+			if (fireballTimer > (rand() % 1) + 2) {
 				fireballTimer = 0;
 				CreateFireBall();
 			}
@@ -219,6 +229,10 @@ public:
 			break;
 		default:break;
 		}
+
+		// move the hit rectangle with the dragon
+		hitRect.x = posRect.x + 155;
+		hitRect.y = posRect.y + 40;
 	}
 
 	void CreateFireBall() {

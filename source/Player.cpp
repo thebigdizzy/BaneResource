@@ -85,6 +85,9 @@ Player::Player(SDL_Renderer *renderer, string filePath, string audioPath, float 
 	rArmPosY = rightRect.y = y + 40;
 	rArmPosX = rightRect.x = x;
 
+	shootingTime = true;
+	sTimer = 0;
+
 	rAngle = 0;
 	rShoulder.x = 0;
 	rShoulder.y = rightRect.h/2;
@@ -156,8 +159,9 @@ void Player::OnButtonRelease(SDL_Event event){
 }
 
 void Player::OnMouseButtonPress(){
-	if(ammoCount > 0 || arrowPU > 0){
+	if((ammoCount > 0 && shootingTime) || (arrowPU > 0 && shootingTime)){
 		CreateBullet();
+		shootingTime = false;
 	}
 }
 
@@ -186,6 +190,16 @@ void Player::OnMouseEvent(int x, int y){
 }
 
 void Player::Update(float deltaTime){
+
+	// update the shooting timer
+	if(!shootingTime){
+		sTimer += deltaTime;
+		if(sTimer > 1){
+			shootingTime = true;
+			sTimer = 0;
+		}
+	}
+
 	// move the player
 	if((!jump && !falling) || speed == 600){
 		if(pos_X <= (1024 - posRect.w) && pos_X >= 0){

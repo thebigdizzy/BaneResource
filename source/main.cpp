@@ -39,6 +39,9 @@
 // include the dragon
 #include "Dragon.h"
 
+// include the pterodactyl
+#include "pterodactyl.h"
+
 using namespace std;
 
 // CODE FOR FRAME RATE INDEPENDENCE
@@ -169,21 +172,6 @@ int main(int argc, char* argv[]) {
 	airWayRect.w = w;
 	airWayRect.h = h;
 
-	// test the health decrement with this
-	string enemyPath = imageDir + "KingArthur.png";
-	SDL_Texture *enemy = NULL;
-	enemy = IMG_LoadTexture(renderer, enemyPath.c_str());
-	SDL_Rect enemyRect;
-	enemyRect.x = 500;
-	enemyRect.y = 550;
-	SDL_QueryTexture(enemy, NULL, NULL, &w, &h);
-	enemyRect.w = w/12;
-	enemyRect.h = h/12;
-	float eMoveX = enemyRect.x;
-	float eMoveY = enemyRect.y;
-	bool enemyActive = true;
-	float enemyTimer = 0;
-
 	// airWay x and y pos
 	float airWayX_pos = airWayRect.x;
 	float airWayY_pos = airWayRect.y;
@@ -203,6 +191,20 @@ int main(int argc, char* argv[]) {
 
 	// initialize the Dragon
 	Dragon dragon(renderer, imageDir, audioDir, 600, -700);
+
+	// setup the pterodactyls in a vector
+	vector<Pterodactyl> pterodactyl;
+
+	// initialize the pterodactyls
+	pterodactyl.push_back(Pterodactyl(renderer, imageDir, audioDir, 950, -100));
+	pterodactyl.push_back(Pterodactyl(renderer, imageDir, audioDir, 950, -100));
+	pterodactyl.push_back(Pterodactyl(renderer, imageDir, audioDir, 950, -100));
+	pterodactyl.push_back(Pterodactyl(renderer, imageDir, audioDir, 950, -100));
+	pterodactyl.push_back(Pterodactyl(renderer, imageDir, audioDir, 950, -100));
+	pterodactyl.push_back(Pterodactyl(renderer, imageDir, audioDir, 950, -100));
+
+	// setup a timer for the spawn rate of the pterodactyls
+	float spawnRate = 0;
 
 	// set up the platforms in a vector
 	vector<Platform> platformList;
@@ -386,6 +388,11 @@ int main(int argc, char* argv[]) {
 				// update the dragon
 				dragon.Update(deltaTime, player.posRect);
 
+				// update the pterodactyls
+				for (int i = 0; i < pterodactyl.size(); i++){
+					pterodactyl[i].Update(deltaTime, player.posRect);
+				}
+
 				// update the mouse position
 				player.OnMouseEvent(mouseX, mouseY);
 
@@ -410,7 +417,7 @@ int main(int argc, char* argv[]) {
 
 				// check for collision with the player's arrows and the dragon
 				for (int i = 0; i < player.bulletList.size(); i++){
-					if(SDL_HasIntersection(&player.bulletList[i].posRect, &dragon.posRect) && dragon.state == dragon.MoveLtoR){
+					if(SDL_HasIntersection(&player.bulletList[i].posRect, &dragon.hitRect) && dragon.state == dragon.MoveLtoR){
 						player.bulletList[i].Reset();
 						dragon.state = dragon.GetHit;
 						dragon.health -= 5;
@@ -424,17 +431,24 @@ int main(int argc, char* argv[]) {
 					}
 				}
 
-				if (!enemyActive) {
-					enemyTimer += deltaTime;
-					if (enemyTimer > 2) {
-						enemyActive = true;
-						enemyTimer = 0;
-					}
-				}
-
 				// check for collision with the platforms
 				for(int i = 0; i < platformList.size(); i++){
 					player.platform[i] = SDL_HasIntersection(&player.feetRect, &platformList[i].posRect);
+				}
+
+				// spawn the pterodactyls here
+				// increment the timer if bossMode is false
+				if(!player.bossMode){
+					spawnRate += deltaTime;
+					if(spawnRate >= 2){
+						spawnRate = 0;
+						for(int i = 0; i < pterodactyl.size(); i++){
+							if(!pterodactyl[i].active){
+								pterodactyl[i].state = pterodactyl[i].Dive;
+								break;
+							}
+						}
+					}
 				}
 
 				// check for collision with the pickups
@@ -480,6 +494,11 @@ int main(int argc, char* argv[]) {
 								platformList[i].MoveX(-player.speed, deltaTime);
 							}
 
+							for(int i = 0; i < pterodactyl.size(); i++){
+								if(pterodactyl[i].active)
+									pterodactyl[i].MoveX(-player.speed, deltaTime);
+							}
+
 							for (int i = 0; i < pickUpList.size(); i++) {
 								pickUpList[i].MoveX(-player.speed, deltaTime);
 							}
@@ -519,6 +538,11 @@ int main(int argc, char* argv[]) {
 
 							for(int i = 0; i < platformList.size(); i++){
 								platformList[i].MoveX(player.speed, deltaTime);
+							}
+
+							for(int i = 0; i < pterodactyl.size(); i++){
+								if(pterodactyl[i].active)
+									pterodactyl[i].MoveX(player.speed, deltaTime);
 							}
 
 							for (int i = 0; i < pickUpList.size(); i++) {
@@ -561,6 +585,11 @@ int main(int argc, char* argv[]) {
 								platformList[i].MoveY(-player.vel_Y, deltaTime);
 							}
 
+							for(int i = 0; i < pterodactyl.size(); i++){
+								if(pterodactyl[i].active)
+									pterodactyl[i].MoveY(-player.vel_Y, deltaTime);
+							}
+
 							for (int i = 0; i < pickUpList.size(); i++) {
 								pickUpList[i].MoveY(-player.vel_Y, deltaTime);
 							}
@@ -598,6 +627,11 @@ int main(int argc, char* argv[]) {
 
 							for(int i = 0; i < platformList.size(); i++){
 								platformList[i].MoveY(-player.vel_Y, deltaTime);
+							}
+
+							for(int i = 0; i < pterodactyl.size(); i++){
+								if(pterodactyl[i].active)
+									pterodactyl[i].MoveY(-player.vel_Y, deltaTime);
 							}
 
 							for (int i = 0; i < pickUpList.size(); i++) {
@@ -661,15 +695,18 @@ int main(int argc, char* argv[]) {
 
 				SDL_RenderCopy(renderer, airWayTex, NULL, &airWayRect);
 
-				// draw the test enemy
-				//SDL_RenderCopy(renderer, enemy, NULL, &enemyRect);
-
 				// draw the pickup items
 				for (int i = 0; i < pickUpList.size(); i++) {
-					pickUpList[i].draw(renderer);
+					if(pickUpList[i].active)
+						pickUpList[i].draw(renderer);
 				}
 
 				dragon.Draw(renderer);
+
+				for (int i = 0; i < pterodactyl.size(); i++){
+					if(pterodactyl[i].active)
+						pterodactyl[i].Draw(renderer);
+				}
 
 				// draw the player
 				player.Draw(renderer);
