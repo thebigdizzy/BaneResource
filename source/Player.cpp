@@ -382,9 +382,9 @@ void Player::BowPickup(){
 	lShoulder.y = leftRect.h/2;
 }
 
-void Player::DamageTaken()
+void Player::DamageTaken(int healthDrop)
 {
-	health -= 10;
+	health -= healthDrop;
 	gui.hMiddleRect.w = ((health / maxHealth) * width);
 }
 

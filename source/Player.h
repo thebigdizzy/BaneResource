@@ -109,7 +109,7 @@ public:
 
 	void BowPickup();
 
-	void DamageTaken();
+	void DamageTaken(int healthDrop);
 
 	void HealthPickup();
 
