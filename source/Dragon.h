@@ -100,7 +100,6 @@ public:
 	void Draw(SDL_Renderer *renderer) {
 		SDL_RenderCopy(renderer, texture, NULL, &posRect);
 		SDL_RenderCopy(renderer, hitTexture, NULL, &hitRect);
-		//cout << health << endl;
 
 		for (int i = 0; i < max; i++) {
 			if (fireball[i]->active) {

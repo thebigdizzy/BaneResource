@@ -42,6 +42,9 @@
 // include the pterodactyl
 #include "pterodactyl.h"
 
+// include for the dragon's lair gate opening
+#include "gate.h"
+
 using namespace std;
 
 // CODE FOR FRAME RATE INDEPENDENCE
@@ -166,7 +169,6 @@ int main(int argc, char* argv[]) {
 	SDL_Rect airWayRect;
 	airWayRect.x = 850;
 	airWayRect.y = -300;
-
 	int w, h;
 	SDL_QueryTexture(airWayTex, NULL, NULL, &w, &h);
 	airWayRect.w = w;
@@ -200,11 +202,15 @@ int main(int argc, char* argv[]) {
 	pterodactyl.push_back(Pterodactyl(renderer, imageDir, audioDir, 950, -100));
 	pterodactyl.push_back(Pterodactyl(renderer, imageDir, audioDir, 950, -100));
 	pterodactyl.push_back(Pterodactyl(renderer, imageDir, audioDir, 950, -100));
-	pterodactyl.push_back(Pterodactyl(renderer, imageDir, audioDir, 950, -100));
-	pterodactyl.push_back(Pterodactyl(renderer, imageDir, audioDir, 950, -100));
+	//pterodactyl.push_back(Pterodactyl(renderer, imageDir, audioDir, 950, -100));
+	//pterodactyl.push_back(Pterodactyl(renderer, imageDir, audioDir, 950, -100));
 
 	// setup a timer for the spawn rate of the pterodactyls
 	float spawnRate = 0;
+	bool canSpawn = false;
+
+	// gate variable
+	Gate gate(renderer, imageDir, audioDir, 0,0);
 
 	// set up the platforms in a vector
 	vector<Platform> platformList;
@@ -390,6 +396,15 @@ int main(int argc, char* argv[]) {
 
 				// update the pterodactyls
 				for (int i = 0; i < pterodactyl.size(); i++){
+					for (int k = 0; k < player.bulletList.size(); k++){
+						if(SDL_HasIntersection(&player.bulletList[k].posRect, &pterodactyl[i].posRect)){
+							if(pterodactyl[i].active){
+								player.bulletList[k].Reset();
+								pterodactyl[i].state = pterodactyl[i].Die;
+							}
+						}
+					}
+
 					pterodactyl[i].Update(deltaTime, player.posRect);
 				}
 
@@ -407,6 +422,16 @@ int main(int argc, char* argv[]) {
 						if (SDL_HasIntersection(&player.posRect, &dragon.fireball[i]->posRect)) {
 							player.DamageTaken(40);
 							dragon.fireball[i]->Reset();
+						}
+					}
+				}
+
+				// check for collision with the pterodactyls
+				for(int i = 0; i < pterodactyl.size(); i++){
+					if(pterodactyl[i].active){
+						if(SDL_HasIntersection(&player.posRect, &pterodactyl[i].posRect)){
+							player.DamageTaken(10);
+							pterodactyl[i].active = false;
 						}
 					}
 				}
@@ -431,19 +456,26 @@ int main(int argc, char* argv[]) {
 					}
 				}
 
+				// update the lair gate
+				gate.Update(deltaTime);
+
 				// check for collision with the platforms
 				for(int i = 0; i < platformList.size(); i++){
 					player.platform[i] = SDL_HasIntersection(&player.feetRect, &platformList[i].posRect);
 				}
 
+				if(player.platform[0]){
+					canSpawn = true;
+				}
+
 				// spawn the pterodactyls here
 				// increment the timer if bossMode is false
-				if(!player.bossMode){
+				if(!player.bossMode && canSpawn){
 					spawnRate += deltaTime;
 					if(spawnRate >= 2){
 						spawnRate = 0;
 						for(int i = 0; i < pterodactyl.size(); i++){
-							if(!pterodactyl[i].active){
+							if(pterodactyl[i].state == pterodactyl[i].Idle){
 								pterodactyl[i].state = pterodactyl[i].Dive;
 								break;
 							}
@@ -490,12 +522,15 @@ int main(int argc, char* argv[]) {
 							// move the test enemy
 							//enemyRect.x = (int)(eMoveX + .5f);
 
+							// move the lair gate
+							gate.MoveX(-player.speed, deltaTime);
+
 							for(int i = 0; i < platformList.size(); i++){
 								platformList[i].MoveX(-player.speed, deltaTime);
 							}
 
 							for(int i = 0; i < pterodactyl.size(); i++){
-								if(pterodactyl[i].active)
+								if(pterodactyl[i].state != pterodactyl[i].Idle)
 									pterodactyl[i].MoveX(-player.speed, deltaTime);
 							}
 
@@ -536,12 +571,15 @@ int main(int argc, char* argv[]) {
 							// move the test enemy
 							//enemyRect.x = (int)(eMoveX + .5f);
 
+							// move the lair gate
+							gate.MoveX(player.speed, deltaTime);
+
 							for(int i = 0; i < platformList.size(); i++){
 								platformList[i].MoveX(player.speed, deltaTime);
 							}
 
 							for(int i = 0; i < pterodactyl.size(); i++){
-								if(pterodactyl[i].active)
+								if(pterodactyl[i].state != pterodactyl[i].Idle)
 									pterodactyl[i].MoveX(player.speed, deltaTime);
 							}
 
@@ -581,12 +619,15 @@ int main(int argc, char* argv[]) {
 							// move the test enemy
 							//enemyRect.y = (int)(eMoveY + .5f);
 
+							// move the lair gate
+							gate.MoveY(-player.vel_Y, deltaTime);
+
 							for(int i = 0; i < platformList.size(); i++){
 								platformList[i].MoveY(-player.vel_Y, deltaTime);
 							}
 
 							for(int i = 0; i < pterodactyl.size(); i++){
-								if(pterodactyl[i].active)
+								if(pterodactyl[i].state != pterodactyl[i].Idle)
 									pterodactyl[i].MoveY(-player.vel_Y, deltaTime);
 							}
 
@@ -625,12 +666,15 @@ int main(int argc, char* argv[]) {
 							// move the test enemy
 							//enemyRect.y = (int)(eMoveY + .5f);
 
+							// move the lair gate
+							gate.MoveY(-player.vel_Y, deltaTime);
+
 							for(int i = 0; i < platformList.size(); i++){
 								platformList[i].MoveY(-player.vel_Y, deltaTime);
 							}
 
 							for(int i = 0; i < pterodactyl.size(); i++){
-								if(pterodactyl[i].active)
+								if(pterodactyl[i].state != pterodactyl[i].Idle)
 									pterodactyl[i].MoveY(-player.vel_Y, deltaTime);
 							}
 
@@ -654,6 +698,7 @@ int main(int argc, char* argv[]) {
 				} else {
 					if(bossInit){
 						bossInit = false;
+						canSpawn = false;
 						dragon.state = dragon.DropIn;
 						player.speed = 600;
 						player.posRect.x = player.pos_X = 105;
@@ -685,6 +730,9 @@ int main(int argc, char* argv[]) {
 				// display the test background
 				SDL_RenderCopy(renderer, testTex, NULL, &testRect);
 
+				// draw the lair gate
+				gate.Draw(renderer);
+
 				// draw the platforms
 				for(int i = 0; i < platformList.size() - 4; i++){
 					platformList[i].Draw(renderer);
@@ -704,7 +752,7 @@ int main(int argc, char* argv[]) {
 				dragon.Draw(renderer);
 
 				for (int i = 0; i < pterodactyl.size(); i++){
-					if(pterodactyl[i].active)
+					if(pterodactyl[i].state != pterodactyl[i].Idle)
 						pterodactyl[i].Draw(renderer);
 				}
 

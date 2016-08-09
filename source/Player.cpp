@@ -194,7 +194,7 @@ void Player::Update(float deltaTime){
 	// update the shooting timer
 	if(!shootingTime){
 		sTimer += deltaTime;
-		if(sTimer > 1){
+		if(sTimer > .5f){
 			shootingTime = true;
 			sTimer = 0;
 		}
@@ -233,22 +233,18 @@ void Player::Update(float deltaTime){
 	switch (pickupNum)
 	{
 	case 1:
-		cout << "hit 1" << endl;
 		ArrowPickup();
 		pickupNum = 0;
 		break;
 	case 2:
-		cout << "hit 2" << endl;
 		HealthPickup();
 		pickupNum = 0;
 		break;
 	case 3:
-		cout << "hit 3" << endl;
 		AmmoPickup();
 		pickupNum = 0;
 		break;
 	case 4:
-		cout << "hit 4" << endl;
 		// bow pickup
 		BowPickup();
 		break;

@@ -33,6 +33,8 @@ public:
 
 	bool begin;
 	int health;
+	bool up, initDeath;
+	float startDeathPos;
 
 	SDL_Rect posRect;
 	SDL_Texture *texture;
@@ -51,6 +53,9 @@ public:
 		health = 100;
 		begin = true;
 		start = 0;
+		up = true;
+		startDeathPos = 0;
+		initDeath = true;
 
 		string path = filePath + "pterodactyl.png";
 		texture = IMG_LoadTexture(renderer, path.c_str());
@@ -111,6 +116,29 @@ public:
 		}
 	}
 
+	void Death(float deltaTime){
+		if(initDeath){
+			active = false;
+			initDeath = false;
+			startDeathPos = posY - 50;
+		}
+
+		if(posY <= startDeathPos){
+			up = false;
+		}
+
+		if(up){
+		posY -= 200 * deltaTime;
+		} else {
+			posY += 200 * deltaTime;
+			if(posY > 900){
+				state = Idle;
+			}
+		}
+
+		posRect.y = (int)(posY + .5f);
+	}
+
 	void MoveY(float playerSpeed, float deltaTime){
 		posY += playerSpeed * deltaTime;
 
@@ -123,14 +151,20 @@ public:
 		posRect.x = (int)(posX + .5f);
 	}
 
+	void Reset(){
+		active = false;
+		posX = sX;
+		posY = sY;
+		posRect.x = (int)(posX + .5f);
+		posRect.y = (int)(posY + .5f);
+		up = true;
+		initDeath = true;
+	}
+
 	void Update(float deltaTime, SDL_Rect PlayerRect){
 		switch(state){
 		case Idle:
-			active = false;
-			posX = sX;
-			posY = sY;
-			posRect.x = (int)(posX + .5f);
-			posRect.y = (int)(posY + .5f);
+			Reset();
 			break;
 		case Dive:
 			active = true;
@@ -143,7 +177,7 @@ public:
 			FlyUp(deltaTime);
 			break;
 		case Die:
-
+			Death(deltaTime);
 			break;
 		default:break;
 		}

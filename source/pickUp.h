@@ -98,23 +98,19 @@ public:
 			{
 			case 1:
 				// return 1 for arrow pickup
-				//cout << "hit 1" << endl;
 				return 1;
 				break;
 			case 2:
 				startTimer = true;
-				//cout << "hit 2" << endl;
 				// return 2 for health pickup
 				return 2;
 				break;
 			case 3:
 				startTimer = true;
-				//cout << "hit 3" << endl;
 				// return 3 for ammo pickup
 				return 3;
 				break;
 			case 4:
-				//cout << "hit 4" << endl;
 				// return 4 for bow pickup
 				return 4;
 				break;
