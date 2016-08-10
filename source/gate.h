@@ -41,8 +41,8 @@ public:
 		posRect.y = posY = y;
 
 		sOneRect.x = posRect.x;
-		sTwoRect.x - posRect.x + 20;
-		sThreeRect.x = posRect.x + 40;
+		sTwoRect.x = posRect.x + 10;
+		sThreeRect.x = posRect.x + 20;
 		sOneRect.y = sOneY = sTwoY = sThreeY = posRect.y - 50;
 
 		string path = filePath + "barrier.png";
@@ -57,13 +57,12 @@ public:
 
 		stringTex = IMG_LoadTexture(renderer, path.c_str());
 		SDL_QueryTexture(stringTex, NULL, NULL, &w, &h);
-		sOneRect.w = w;
-		sOneRect.h = h;
-		sTwoRect.w = w;
-		sTwoRect.h = h;
-		sThreeRect.w = w;
-		sThreeRect.h = h;
-
+		sOneRect.w = w/15;
+		sOneRect.h = h/15;
+		sTwoRect.w = w/15;
+		sTwoRect.h = h/15;
+		sThreeRect.w = w/15;
+		sThreeRect.h = h/15;
 
 		center.x = (posRect.w/2);
 		center.y = posRect.h;
@@ -77,7 +76,9 @@ public:
 
 	void Draw(SDL_Renderer *renderer){
 		SDL_RenderCopyEx(renderer, texture, NULL, &posRect, angle, &center, SDL_FLIP_NONE);
-		SDL_RenderCopy(renderer, stringTex, NULL, &sOneRect);
+		SDL_RenderCopyEx(renderer, stringTex, NULL, &sOneRect, 80, NULL, SDL_FLIP_NONE);
+		SDL_RenderCopyEx(renderer, stringTex, NULL, &sTwoRect, 80, NULL, SDL_FLIP_NONE);
+		SDL_RenderCopyEx(renderer, stringTex, NULL, &sThreeRect, 80, NULL, SDL_FLIP_NONE);
 	}
 
 	void Open(float deltaTime){
@@ -102,21 +103,27 @@ public:
 	}
 
 	void Fall1(float deltaTime){
-		sOneY += 200 * deltaTime;
-		sOneRect.y = (int)(sOneY + .5f);
+		if(sOneY < 3000){
+			sOneY += 200 * deltaTime;
+			sOneRect.y = (int)(sOneY + .5f);
+		}
 	}
 
 	void Fall2(float deltaTime){
-
+		if(sTwoY < 3000){
+			sTwoY += 200 * deltaTime;
+			sTwoRect.y = (int)(sTwoY + .5f);
+		}
 	}
 
 	void Fall3(float deltaTime){
-
+		if(sThreeY < 3000){
+			sThreeY += 200 * deltaTime;
+			sThreeRect.y = (int)(sThreeY + .5f);
+		}
 	}
 
 	void Update(float deltaTime){
-
-		cout << angle << endl;
 		switch(state){
 		case Idle:
 			if(fall1){
@@ -144,11 +151,17 @@ public:
 		posY += playerSpeed * deltaTime;
 
 		posRect.y = (int)(posY + .5f);
+
+		sOneRect.y = sTwoRect.y = sThreeRect.y = posRect.y - 10;
 	}
 
 	void MoveX(float playerSpeed, float deltaTime){
 		posX += playerSpeed * deltaTime;
 
 		posRect.x = (int)(posX + .5f);
+
+		sOneRect.x = posRect.x;
+		sTwoRect.x = posRect.x + 5;
+		sThreeRect.x = posRect.x + 10;
 	}
 };
