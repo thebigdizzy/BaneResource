@@ -452,7 +452,7 @@ int main(int argc, char* argv[]) {
 				// "blow" the player up through the airWay
 				if(SDL_HasIntersection(&player.posRect, &airWayRect)){
 					if(player.vel_Y >= -200){
-						player.vel_Y -= .7f;
+						player.vel_Y -= 500 * deltaTime;
 					}
 				}
 
