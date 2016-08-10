@@ -210,7 +210,7 @@ int main(int argc, char* argv[]) {
 	bool canSpawn = false;
 
 	// gate variable
-	Gate gate(renderer, imageDir, audioDir, 0,0);
+	Gate gate(renderer, imageDir, audioDir, 2050,-1150);
 
 	// set up the platforms in a vector
 	vector<Platform> platformList;
@@ -372,7 +372,7 @@ int main(int argc, char* argv[]) {
 							level1 = false;
 						}
 						if(event.key.keysym.sym == SDLK_RETURN){
-
+							gate.state = gate.Lower;
 						}
 						// send the button info to the player object
 						player.OnButtonPress(event);
