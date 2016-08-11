@@ -208,6 +208,8 @@ int main(int argc, char* argv[]) {
 	// setup a timer for the spawn rate of the pterodactyls
 	float spawnRate = 0;
 	bool canSpawn = false;
+	int dragonCount = 0;
+	float dragonTimer = 0;
 
 	// gate variable
 	Gate gate(renderer, imageDir, audioDir, 2050,-1150);
@@ -454,6 +456,55 @@ int main(int argc, char* argv[]) {
 					if(player.vel_Y >= -200){
 						player.vel_Y -= 500 * deltaTime;
 					}
+					canSpawn = true;
+				}
+
+				// spawn in pterodactyls if the Dragon is in FlyAway state
+				if(dragon.state == dragon.FlyAway && dragonCount == 0){
+					canSpawn = true;
+					dragonCount = 1;
+				}
+
+				if(dragonCount == 1 && dragon.state == 0){
+					// start the dragon Timer
+					dragonTimer += deltaTime;
+					cout << "hit" << endl;
+				}
+
+				if(dragonTimer > 15){
+					dragonTimer = 0;
+					dragonCount = -1;
+					canSpawn = false;
+					dragon.state = dragon.DropIn;
+				}
+
+				//Check Collision on the large arrows and the strings holding the gate closed
+				for (int i = 0; i < player.arrowList.size(); i++){
+					if(SDL_HasIntersection(&player.arrowList[i].posRect, &gate.sOneRect)){
+						player.arrowList[i].Reset();
+						if(!gate.fall1){
+							gate.fall1 = true;
+							gate.sOneY = gate.sOneRect.y;
+							cout << "hit1" << endl;
+						}
+					}
+					if(SDL_HasIntersection(&player.arrowList[i].posRect, &gate.sTwoRect)){
+						player.arrowList[i].Reset();
+						if(gate.fall1 && !gate.fall2){
+							gate.fall2 = true;
+							gate.sTwoY = gate.sTwoRect.y;
+							cout << "hit2" << endl;
+						}
+					}
+					if(SDL_HasIntersection(&player.arrowList[i].posRect, &gate.sThreeRect)){
+						player.arrowList[i].Reset();
+						if(gate.fall1 && gate.fall2 && !gate.fall3){
+							gate.fall3 = true;
+							gate.sThreeY = gate.sThreeRect.y;
+							cout << "hit3" << endl;
+							canSpawn = false;
+						}
+					}
 				}
 
 				// update the lair gate
@@ -464,8 +515,13 @@ int main(int argc, char* argv[]) {
 					player.platform[i] = SDL_HasIntersection(&player.feetRect, &platformList[i].posRect);
 				}
 
-				if(player.platform[0]){
-					canSpawn = true;
+				if(player.platform[9] || player.pos_Y < 400){
+					int moveSpeed = 100;
+					platformList[9].pos_Y -= moveSpeed * deltaTime;
+					platformList[9].posRect.y = (int)(platformList[9].pos_Y + .5f);
+					platformList[9].grassRect1.y = platformList[9].posRect.y - 15;
+					platformList[9].grassRect2.y = platformList[9].posRect.y - 15;
+					player.pos_Y = platformList[9].posRect.y - player.posRect.h;
 				}
 
 				// spawn the pterodactyls here
@@ -601,11 +657,13 @@ int main(int argc, char* argv[]) {
 							//eMoveX = enemyRect.x;
 						}
 					}
-					if(player.jump && player.vel_Y < 0){
-						Y_pos -= player.vel_Y * deltaTime;
-						RY_pos -= player.vel_Y * deltaTime;
-						LY_pos -= player.vel_Y * deltaTime;
-						airWayY_pos -= (player.vel_Y) * deltaTime;
+					if(player.pos_Y < 400){
+						cout << "hit up" << endl;
+						int moveSpeed = 100;
+						Y_pos += moveSpeed * deltaTime;
+						RY_pos += moveSpeed * deltaTime;
+						LY_pos += moveSpeed * deltaTime;
+						airWayY_pos += (moveSpeed) * deltaTime;
 
 						// move the test enemy
 						//eMoveY -= player.vel_Y * deltaTime;
@@ -620,23 +678,23 @@ int main(int argc, char* argv[]) {
 							//enemyRect.y = (int)(eMoveY + .5f);
 
 							// move the lair gate
-							gate.MoveY(-player.vel_Y, deltaTime);
+							gate.MoveY(moveSpeed, deltaTime);
 
 							for(int i = 0; i < platformList.size(); i++){
-								platformList[i].MoveY(-player.vel_Y, deltaTime);
+								platformList[i].MoveY(moveSpeed, deltaTime);
 							}
 
 							for(int i = 0; i < pterodactyl.size(); i++){
 								if(pterodactyl[i].state != pterodactyl[i].Idle)
-									pterodactyl[i].MoveY(-player.vel_Y, deltaTime);
+									pterodactyl[i].MoveY(moveSpeed, deltaTime);
 							}
 
 							for (int i = 0; i < pickUpList.size(); i++) {
-								pickUpList[i].MoveY(-player.vel_Y, deltaTime);
+								pickUpList[i].MoveY(moveSpeed, deltaTime);
 							}
 
 							for (int i = 0; i < player.bulletList.size(); i++){
-								player.bulletList[i].BulletMoveY(-player.vel_Y, deltaTime);
+								player.bulletList[i].BulletMoveY(moveSpeed, deltaTime);
 							}
 						} else {
 							Y_pos = testRect.y;
@@ -648,11 +706,13 @@ int main(int argc, char* argv[]) {
 							//eMoveY = enemyRect.y;
 						}
 					}
-					if((player.jump && player.vel_Y > 0) || (!player.jump && player.falling)){
-						Y_pos -= player.vel_Y * deltaTime;
-						RY_pos -= player.vel_Y * deltaTime;
-						LY_pos -= player.vel_Y * deltaTime;
-						airWayY_pos -= (player.vel_Y) * deltaTime;
+					if(player.pos_Y > 600){
+						cout << "hit down" << endl;
+						int moveSpeed = 100;
+						Y_pos -= moveSpeed * deltaTime;
+						RY_pos -= moveSpeed * deltaTime;
+						LY_pos -= moveSpeed * deltaTime;
+						airWayY_pos -= (moveSpeed) * deltaTime;
 
 						// move the test enemy
 						//eMoveY -= player.vel_Y * deltaTime;
@@ -667,23 +727,23 @@ int main(int argc, char* argv[]) {
 							//enemyRect.y = (int)(eMoveY + .5f);
 
 							// move the lair gate
-							gate.MoveY(-player.vel_Y, deltaTime);
+							gate.MoveY(-moveSpeed, deltaTime);
 
 							for(int i = 0; i < platformList.size(); i++){
-								platformList[i].MoveY(-player.vel_Y, deltaTime);
+								platformList[i].MoveY(-moveSpeed, deltaTime);
 							}
 
 							for(int i = 0; i < pterodactyl.size(); i++){
 								if(pterodactyl[i].state != pterodactyl[i].Idle)
-									pterodactyl[i].MoveY(-player.vel_Y, deltaTime);
+									pterodactyl[i].MoveY(-moveSpeed, deltaTime);
 							}
 
 							for (int i = 0; i < pickUpList.size(); i++) {
-								pickUpList[i].MoveY(-player.vel_Y, deltaTime);
+								pickUpList[i].MoveY(-moveSpeed, deltaTime);
 							}
 
 							for (int i = 0; i < player.bulletList.size(); i++){
-								player.bulletList[i].BulletMoveY(-player.vel_Y, deltaTime);
+								player.bulletList[i].BulletMoveY(-moveSpeed, deltaTime);
 							}
 						} else {
 							Y_pos = testRect.y;

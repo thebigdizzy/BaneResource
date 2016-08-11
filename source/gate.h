@@ -40,10 +40,10 @@ public:
 		posRect.x = posX = x;
 		posRect.y = posY = y;
 
-		sOneRect.x = posRect.x;
-		sTwoRect.x = posRect.x + 10;
-		sThreeRect.x = posRect.x + 20;
-		sOneRect.y = sOneY = sTwoY = sThreeY = posRect.y - 50;
+		sOneRect.x = posRect.x - 60;
+		sTwoRect.x = posRect.x - 50;
+		sThreeRect.x = posRect.x - 40;
+		sOneRect.y = sOneY = sTwoY = sThreeY = posRect.y - 100;
 
 		string path = filePath + "barrier.png";
 
@@ -76,9 +76,9 @@ public:
 
 	void Draw(SDL_Renderer *renderer){
 		SDL_RenderCopyEx(renderer, texture, NULL, &posRect, angle, &center, SDL_FLIP_NONE);
-		SDL_RenderCopyEx(renderer, stringTex, NULL, &sOneRect, 80, NULL, SDL_FLIP_NONE);
-		SDL_RenderCopyEx(renderer, stringTex, NULL, &sTwoRect, 80, NULL, SDL_FLIP_NONE);
-		SDL_RenderCopyEx(renderer, stringTex, NULL, &sThreeRect, 80, NULL, SDL_FLIP_NONE);
+		SDL_RenderCopyEx(renderer, stringTex, NULL, &sOneRect, 100, NULL, SDL_FLIP_NONE);
+		SDL_RenderCopyEx(renderer, stringTex, NULL, &sTwoRect, 100, NULL, SDL_FLIP_NONE);
+		SDL_RenderCopyEx(renderer, stringTex, NULL, &sThreeRect, 100, NULL, SDL_FLIP_NONE);
 	}
 
 	void Open(float deltaTime){
@@ -103,23 +103,27 @@ public:
 	}
 
 	void Fall1(float deltaTime){
-		if(sOneY < 3000){
+		if(sOneRect.y < 3000){
 			sOneY += 200 * deltaTime;
 			sOneRect.y = (int)(sOneY + .5f);
 		}
 	}
 
 	void Fall2(float deltaTime){
-		if(sTwoY < 3000){
+		if(sTwoRect.y < 3000){
 			sTwoY += 200 * deltaTime;
 			sTwoRect.y = (int)(sTwoY + .5f);
 		}
 	}
 
 	void Fall3(float deltaTime){
-		if(sThreeY < 3000){
+		if(sThreeRect.y < 3000){
 			sThreeY += 200 * deltaTime;
 			sThreeRect.y = (int)(sThreeY + .5f);
+		}
+
+		if(sThreeRect.y >= 500){
+			state = Lower;
 		}
 	}
 
@@ -136,8 +140,13 @@ public:
 			if(fall3){
 				Fall3(deltaTime);
 			}
+
+			//cout << fall1 << fall2 << fall3 << endl;
 			break;
 		case Lower:
+			Fall1(deltaTime);
+			Fall2(deltaTime);
+			Fall3(deltaTime);
 			Open(deltaTime);
 			break;
 		case Fall:
@@ -152,7 +161,12 @@ public:
 
 		posRect.y = (int)(posY + .5f);
 
-		sOneRect.y = sTwoRect.y = sThreeRect.y = posRect.y - 10;
+		if(!fall1)
+			sOneRect.y = posRect.y - 100;
+		if(!fall2)
+			sTwoRect.y = posRect.y - 100;
+		if(!fall3)
+			sThreeRect.y = posRect.y - 100;
 	}
 
 	void MoveX(float playerSpeed, float deltaTime){
@@ -160,8 +174,11 @@ public:
 
 		posRect.x = (int)(posX + .5f);
 
-		sOneRect.x = posRect.x;
-		sTwoRect.x = posRect.x + 5;
-		sThreeRect.x = posRect.x + 10;
+		if(!fall1)
+			sOneRect.x = posRect.x - 60;
+		if(!fall2)
+			sTwoRect.x = posRect.x - 50;
+		if(!fall3)
+			sThreeRect.x = posRect.x - 40;
 	}
 };

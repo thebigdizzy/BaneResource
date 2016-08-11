@@ -315,13 +315,12 @@ void Player::GravitySimulator(float deltaTime){
 			jump = false;
 			break;
 		}
+	}
 
-		if((groundCollisionLeft || groundCollisionRight) && (falling)){
-			vel_Y = -1;
-			falling = false;
-			jump = false;
-			break;
-		}
+	if((groundCollisionLeft || groundCollisionRight) && (falling)){
+		vel_Y = -1;
+		falling = false;
+		jump = false;
 	}
 
 	if(!jump && !falling){
