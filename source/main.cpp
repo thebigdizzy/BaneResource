@@ -214,6 +214,9 @@ int main(int argc, char* argv[]) {
 	// gate variable
 	Gate gate(renderer, imageDir, audioDir, 2050,-1150);
 
+	float arrowTimer = 0;
+	bool aTimerStart = false;
+
 	// set up the platforms in a vector
 	vector<Platform> platformList;
 
@@ -237,6 +240,9 @@ int main(int argc, char* argv[]) {
 	platformList.push_back(Platform(renderer, imageDir, audioDir, 2360, -820));
 	platformList.push_back(Platform(renderer, imageDir, audioDir, 2610, -820));
 	platformList.push_back(Platform(renderer, imageDir, audioDir, 2760, -820));
+
+	float distanceRise = 100;
+	float distanceTravelled = 0;
 
 	// set up a pickup vector
 	vector <PickUp> pickUpList;
@@ -262,6 +268,71 @@ int main(int argc, char* argv[]) {
 	// initialize the bow pickup
 	pickUpList.push_back(PickUp(renderer, imageDir, 4, 275, 470));
 
+	///////////////////////// MENU SETUP ///////////////////////////
+	path = imageDir + "menuTitle.png";
+	SDL_Rect menuTitle;
+	SDL_Texture *menuT = IMG_LoadTexture(renderer, path.c_str());
+	SDL_QueryTexture(menuT, NULL, NULL, &w, &h);
+	menuTitle.x = 410;
+	menuTitle.y = 80;
+	menuTitle.w = w;
+	menuTitle.h = h;
+
+	path = imageDir + "playN.png";
+	SDL_Rect playButton;
+	SDL_Texture *playN = IMG_LoadTexture(renderer, path.c_str());
+	SDL_QueryTexture(playN, NULL, NULL, &w, &h);
+	playButton.x = 264;
+	playButton.y = 675;
+	playButton.w = w;
+	playButton.h = h;
+
+	path = imageDir + "playO.png";
+	SDL_Texture *playO = IMG_LoadTexture(renderer, path.c_str());
+
+	path = imageDir + "quitN.png";
+	SDL_Rect quitButton;
+	SDL_Texture *quitN = IMG_LoadTexture(renderer, path.c_str());
+	SDL_QueryTexture(quitN, NULL, NULL, &w, &h);
+	quitButton.x = 647;
+	quitButton.y = 675;
+	quitButton.w = w;
+	quitButton.h = h;
+
+	path = imageDir + "quitO.png";
+	SDL_Texture *quitO = IMG_LoadTexture(renderer, path.c_str());
+
+	SDL_Rect cursor;
+	cursor.x = cursor.y = 0;
+	cursor.w = cursor.h = 10;
+
+	///////////////////////// END MENU SETUP ///////////////////////////
+
+	///////////////////////// WIN SCENE SETUP ///////////////////////////
+	path = imageDir + "youWin.png";
+
+	SDL_Rect winTitle;
+	SDL_Texture *winT = IMG_LoadTexture(renderer, path.c_str());
+	winTitle.x = 410;
+	winTitle.y = 80;
+	winTitle.w = w;
+	winTitle.h = h;
+
+	///////////////////////// END WIN SCENE SETUP ///////////////////////////
+
+	///////////////////////// LOSE SCENE SETUP ///////////////////////////
+
+	path = imageDir + "youLose.png";
+
+	SDL_Rect loseTitle;
+	SDL_Texture *loseT = IMG_LoadTexture(renderer, path.c_str());
+	loseTitle.x = 410;
+	loseTitle.y = 80;
+	loseTitle.w = w;
+	loseTitle.h = h;
+
+	///////////////////////// END LOSE SCENE SETUP ///////////////////////////
+
 	// bool for initializing boss Mode
 	bool bossInit = true;
 
@@ -272,7 +343,7 @@ int main(int argc, char* argv[]) {
 	enum GameState { MENU, LEVEL1, WIN, LOSE };
 
 	// ***** set up the initial state
-	GameState gameState = LEVEL1;
+	GameState gameState = MENU;
 
 	// bool value to control movement through the states
 	bool menu = false, level1 = false, win = false, lose = false, quit = false;
@@ -308,7 +379,15 @@ int main(int argc, char* argv[]) {
 					// enter case for button down with this code - case SDL_CONTROLLERBUTTONDOWN: & if (event.cdevice.which == 0)
 					case SDL_MOUSEBUTTONDOWN:
 						if(event.button.button == SDL_BUTTON_LEFT){
+							if(SDL_HasIntersection(&cursor, &playButton)){
+								menu = false;
+								gameState = LEVEL1;
+							}
 
+							if(SDL_HasIntersection(&cursor, &quitButton)){
+								menu = false;
+								quit = true;
+							}
 						}
 						break;
 					case SDL_KEYDOWN:
@@ -319,8 +398,8 @@ int main(int argc, char* argv[]) {
 					default:break;
 					} // end switch event type
 
-					mouseX = event.button.x;
-					mouseY = event.button.y;
+					cursor.x = event.button.x;
+					cursor.y = event.button.y;
 				} // end poll event
 
 				// Clear SDL renderer
@@ -328,8 +407,20 @@ int main(int argc, char* argv[]) {
 
 				// put in display images here with SDL_RenderCopy()
 
-				// display the test background
-				SDL_RenderCopy(renderer, testTex, NULL, &testRect);
+				// display the menu title
+				SDL_RenderCopy(renderer, menuT, NULL, &menuTitle);
+
+				if(SDL_HasIntersection(&cursor, &playButton)){
+					SDL_RenderCopy(renderer, playO, NULL, &playButton);
+				} else {
+					SDL_RenderCopy(renderer, playN, NULL, &playButton);
+				}
+
+				if(SDL_HasIntersection(&cursor, &quitButton)){
+					SDL_RenderCopy(renderer, quitO, NULL, &quitButton);
+				} else {
+					SDL_RenderCopy(renderer, quitN, NULL, &quitButton);
+				}
 
 				// present the renderer
 				SDL_RenderPresent(renderer);
@@ -362,6 +453,9 @@ int main(int argc, char* argv[]) {
 						if(event.button.button == SDL_BUTTON_LEFT){
 							//use this area to shoot an arrow
 							player.OnMouseButtonPress();
+							if(player.weaponID == 1){
+								aTimerStart = true;
+							}
 						}
 						if(event.button.button == SDL_BUTTON_RIGHT){
 							//use this area to shoot an arrow
@@ -374,7 +468,7 @@ int main(int argc, char* argv[]) {
 							level1 = false;
 						}
 						if(event.key.keysym.sym == SDLK_RETURN){
-							gate.state = gate.Lower;
+
 						}
 						// send the button info to the player object
 						player.OnButtonPress(event);
@@ -484,6 +578,8 @@ int main(int argc, char* argv[]) {
 						player.arrowList[i].Reset();
 						if(!gate.fall1){
 							gate.fall1 = true;
+							aTimerStart = false;
+							arrowTimer = 0;
 							gate.sOneY = gate.sOneRect.y;
 							cout << "hit1" << endl;
 						}
@@ -492,6 +588,8 @@ int main(int argc, char* argv[]) {
 						player.arrowList[i].Reset();
 						if(gate.fall1 && !gate.fall2){
 							gate.fall2 = true;
+							aTimerStart = false;
+							arrowTimer = 0;
 							gate.sTwoY = gate.sTwoRect.y;
 							cout << "hit2" << endl;
 						}
@@ -500,9 +598,37 @@ int main(int argc, char* argv[]) {
 						player.arrowList[i].Reset();
 						if(gate.fall1 && gate.fall2 && !gate.fall3){
 							gate.fall3 = true;
+							aTimerStart = false;
+							arrowTimer = 0;
 							gate.sThreeY = gate.sThreeRect.y;
 							cout << "hit3" << endl;
 							canSpawn = false;
+						}
+					}
+				}
+
+				// check to see if the arrow hit one of the strings, if not then reset the arrow
+				if(aTimerStart){
+					arrowTimer += deltaTime;
+					if(arrowTimer > 2){
+						if(!gate.fall1){
+							cout << "hit1" << endl;
+							player.arrowPU++;
+							aTimerStart = false;
+							arrowTimer = 0;
+						} else if (!gate.fall2){
+							cout << "hit2" << endl;
+							player.arrowPU++;
+							aTimerStart = false;
+							arrowTimer = 0;
+						} else if(!gate.fall3){
+							cout << "hit3" << endl;
+							player.arrowPU++;
+							aTimerStart = false;
+							arrowTimer = 0;
+						} else {
+							aTimerStart = false;
+							arrowTimer = 0;
 						}
 					}
 				}
@@ -515,13 +641,29 @@ int main(int argc, char* argv[]) {
 					player.platform[i] = SDL_HasIntersection(&player.feetRect, &platformList[i].posRect);
 				}
 
-				if(player.platform[9] || player.pos_Y < 400){
+				if(player.platform[9]){
 					int moveSpeed = 100;
-					platformList[9].pos_Y -= moveSpeed * deltaTime;
-					platformList[9].posRect.y = (int)(platformList[9].pos_Y + .5f);
-					platformList[9].grassRect1.y = platformList[9].posRect.y - 15;
-					platformList[9].grassRect2.y = platformList[9].posRect.y - 15;
-					player.pos_Y = platformList[9].posRect.y - player.posRect.h;
+					if(distanceRise > distanceTravelled){
+						distanceTravelled += moveSpeed * deltaTime;
+						platformList[9].pos_Y -= moveSpeed * deltaTime;
+						platformList[9].posRect.y = (int)(platformList[9].pos_Y + .5f);
+						platformList[9].grassRect1.y = platformList[9].posRect.y - 15;
+						platformList[9].grassRect2.y = platformList[9].posRect.y - 15;
+						player.pos_Y = platformList[9].posRect.y - player.posRect.h;
+					} else {
+						distanceTravelled = 100;
+					}
+				} else {
+					if(0 < distanceTravelled){
+						int moveSpeed = -100;
+						distanceTravelled += moveSpeed * deltaTime;
+						platformList[9].pos_Y -= moveSpeed * deltaTime;
+						platformList[9].posRect.y = (int)(platformList[9].pos_Y + .5f);
+						platformList[9].grassRect1.y = platformList[9].posRect.y - 15;
+						platformList[9].grassRect2.y = platformList[9].posRect.y - 15;
+					} else {
+						distanceTravelled = 0;
+					}
 				}
 
 				// spawn the pterodactyls here
@@ -657,9 +799,10 @@ int main(int argc, char* argv[]) {
 							//eMoveX = enemyRect.x;
 						}
 					}
-					if(player.pos_Y < 400){
-						cout << "hit up" << endl;
-						int moveSpeed = 100;
+
+					if(player.vel_Y < -1){
+						//player.pos_Y = 200;
+						int moveSpeed = -player.vel_Y;
 						Y_pos += moveSpeed * deltaTime;
 						RY_pos += moveSpeed * deltaTime;
 						LY_pos += moveSpeed * deltaTime;
@@ -707,8 +850,8 @@ int main(int argc, char* argv[]) {
 						}
 					}
 					if(player.pos_Y > 600){
-						cout << "hit down" << endl;
-						int moveSpeed = 100;
+						player.pos_Y = 600;
+						int moveSpeed = player.vel_Y;
 						Y_pos -= moveSpeed * deltaTime;
 						RY_pos -= moveSpeed * deltaTime;
 						LY_pos -= moveSpeed * deltaTime;
@@ -868,7 +1011,19 @@ int main(int argc, char* argv[]) {
 				// Clear SDL renderer
 				SDL_RenderClear(renderer);
 
+				SDL_RenderCopy(renderer, playO, NULL, &playButton);
 
+				if(SDL_HasIntersection(&cursor, &playButton)){
+					SDL_RenderCopy(renderer, playO, NULL, &playButton);
+				} else {
+					SDL_RenderCopy(renderer, playN, NULL, &playButton);
+				}
+
+				if(SDL_HasIntersection(&cursor, &quitButton)){
+					SDL_RenderCopy(renderer, quitO, NULL, &quitButton);
+				} else {
+					SDL_RenderCopy(renderer, quitN, NULL, &quitButton);
+				}
 
 				// present the renderer
 				SDL_RenderPresent(renderer);

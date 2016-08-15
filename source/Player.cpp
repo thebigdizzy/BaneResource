@@ -224,8 +224,8 @@ void Player::Update(float deltaTime){
 		if(pos_Y > 700 - posRect.h){
 			pos_Y = 700 - posRect.h;
 		}
-		if(pos_Y < 300){
-			pos_Y = 300;
+		if(pos_Y < 200){
+			pos_Y = 200;
 		}
 	}
 
@@ -345,6 +345,9 @@ void Player::GravitySimulator(float deltaTime){
 }
 
 void Player::Draw(SDL_Renderer *renderer){
+
+	gui.DrawGlow(weaponID, renderer);
+
 	SDL_RenderCopy(renderer, texture, NULL, &posRect);
 	SDL_RenderCopyEx(renderer, leftArm, NULL, &leftRect, lAngle, &lShoulder, SDL_FLIP_NONE);
 	SDL_RenderCopyEx(renderer, rightArm, NULL, &rightRect, rAngle, &rShoulder, SDL_FLIP_NONE);

@@ -27,7 +27,7 @@ using namespace std;
 
 class GUI{
 public:
-	SDL_Texture *hTopTexture, *hMiddleTexture, *hBottomTexture;
+	SDL_Texture *hTopTexture, *hMiddleTexture, *hBottomTexture, *glow;
 
 	// health rectangles
 	SDL_Rect hTopRect, hMiddleRect, hBottomRect;
@@ -118,6 +118,9 @@ public:
 
 		Ten = IMG_LoadTexture(renderer, path.c_str());
 
+		path = filePath + "glow.png";
+		glow = IMG_LoadTexture(renderer, path.c_str());
+
 		// set up the cursor rectangle
 		cursorRect.x = cursorRect.y = 0;
 
@@ -178,6 +181,14 @@ public:
 		SDL_QueryTexture(Ten, NULL, NULL, &w, &h);
 		ammoRect.w = w/3;
 		ammoRect.h = h/3;
+	}
+
+	void DrawGlow(int weaponID, SDL_Renderer *renderer){
+		if(!weaponID){
+			SDL_RenderCopy(renderer, glow, NULL, &ammoRect);
+		} else {
+			SDL_RenderCopy(renderer, glow, NULL, &aBackRect);
+		}
 	}
 
 	void Draw(SDL_Renderer *renderer, int ammoCount, int arrowPU) {

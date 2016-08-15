@@ -134,7 +134,7 @@ public:
 
 	void LookAtThePlayer(SDL_Rect PlayerRect) {
 		float X = (float)((PlayerRect.x + (PlayerRect.w / 2)) - (posRect.x + (posRect.w / 2)));
-		float Y = (float)((PlayerRect.y + (PlayerRect.h / 2)) - (posRect.y + (posRect.h / 2)));
+		float Y = (float)((PlayerRect.y + (PlayerRect.h / 3.5f)) - (posRect.y + (posRect.h / 3.5f)));
 
 		Angle = atan2(Y, X) * 180 / 3.14f;
 	}
@@ -250,11 +250,11 @@ public:
 				// use some math in the x position to get the bullet close to
 				// the center of the dragon using dragon width
 				fireball[i]->posRect.x = (posRect.x + (posRect.w / 2));
-				fireball[i]->posRect.y = (posRect.y + (posRect.h / 2));
+				fireball[i]->posRect.y = (posRect.y + (posRect.h / 3.5));
 
 				// finishing alighning to the dragon center using the texture width
 				fireball[i]->posRect.x = fireball[i]->posRect.x - (fireball[i]->posRect.w / 2);
-				fireball[i]->posRect.y = fireball[i]->posRect.y - (fireball[i]->posRect.h / 2);
+				fireball[i]->posRect.y = fireball[i]->posRect.y - (fireball[i]->posRect.h / 3.5);
 
 				// set the x and y position of the bullet's float positions
 				fireball[i]->pos_X = fireball[i]->posRect.x;
@@ -270,6 +270,12 @@ public:
 				break;
 
 			}
+		}
+	}
+
+	~Dragon(){
+		for (int i = 0; i < max; i++) {
+			delete fireball[i];
 		}
 	}
 };
