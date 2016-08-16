@@ -12,6 +12,9 @@ Player::Player(SDL_Renderer *renderer, string filePath, string audioPath, float 
 	audiopath = audioPath;
 	render = renderer;
 
+	sX = x;
+	sY = y;
+
 	active = true;
 
 	bossMode = false;
@@ -524,5 +527,64 @@ void Player::CreateBullet()
 }
 
 void Player::Reset(){
+	posRect.x = pos_X = sX;
+	posRect.y = pos_Y = sY;
 
+	feetRect.x = posRect.x;
+	feetRect.y = posRect.y + posRect.h;
+
+	active = true;
+
+	HealthPickup();
+	bossMode = false;
+
+	bow = false;
+	bowR = false;
+	bowL = false;
+
+	jump = false;
+	left = false;
+	right = false;
+	falling = false;
+	groundCollisionLeft = false;
+	groundCollisionRight = false;
+
+	rPath = filepath + "leftArm.png";
+	int w, h;
+	rightArm = IMG_LoadTexture(render, rPath.c_str());
+	SDL_QueryTexture(rightArm, NULL, NULL, &w, &h);
+	rightRect.w = w/12;
+	rightRect.h = h/12;
+
+	lPath = filepath + "rightArm.png";
+
+	leftArm = IMG_LoadTexture(render, lPath.c_str());
+	SDL_QueryTexture(leftArm, NULL, NULL, &w, &h);
+	leftRect.w = w/12;
+	leftRect.h = h/12;
+
+	lAngle = 0;
+	lShoulder.x = 0;
+	lShoulder.y = leftRect.h/2;
+
+	lArmPosY = leftRect.y = posRect.y + 40;
+	lArmPosX = leftRect.x = posRect.x + posRect.w;
+
+	rArmPosY = rightRect.y = posRect.y + 40;
+	rArmPosX = rightRect.x = posRect.x;
+
+	shootingTime = true;
+	sTimer = 0;
+
+	rAngle = 0;
+	rShoulder.x = 0;
+	rShoulder.y = rightRect.h/2;
+
+	speed = 300;
+
+	pickupNum = 0;
+
+	ammoCount = 0;
+
+	arrowPU = 0;
 }

@@ -208,8 +208,14 @@ int main(int argc, char* argv[]) {
 	// setup a timer for the spawn rate of the pterodactyls
 	float spawnRate = 0;
 	bool canSpawn = false;
-	int dragonCount = 0;
-	float dragonTimer = 0;
+
+	// set up a barrier for the right side near the lava
+	float lX, lY;
+	SDL_Rect Lava;
+	Lava.x = lX = 2000;
+	Lava.y = lY = -1500;
+	Lava.w = 1000;
+	Lava.h = 2000;
 
 	// gate variable
 	Gate gate(renderer, imageDir, audioDir, 2050,-1150);
@@ -432,6 +438,46 @@ int main(int argc, char* argv[]) {
 
 			SDL_ShowCursor(0);
 
+			player.bossMode = true;
+
+			player.Reset();
+
+			canSpawn = false;
+			for (int i = 0; i < pterodactyl.size(); i++){
+				pterodactyl[i].Reset();
+			}
+
+			testRect.x = X_pos = 0;
+			testRect.y = Y_pos = -1536;
+
+			Lava.x = lX = 2000;
+			Lava.y = lY = -1500;
+
+			for (int i = 0; i < platformList.size(); i++){
+				platformList[i].Reset();
+			}
+
+			gate.Reset();
+
+			for(int i = 0; i < pickUpList.size(); i++){
+				pickUpList[i].Reset();
+			}
+
+			leftGroundRect.x = 0;
+			leftGroundRect.y = 635;
+			LX_pos = leftGroundRect.x;
+			LY_pos = leftGroundRect.y;
+
+			rightGroundRect.x = 1184;
+			rightGroundRect.y = 635;
+			RX_pos = rightGroundRect.x;
+			RY_pos = rightGroundRect.y;
+
+			airWayRect.x = 850;
+			airWayRect.y = -300;
+			airWayX_pos = airWayRect.x;
+			airWayY_pos = airWayRect.y;
+
 			// start level 1 game loop
 			while(level1){
 				// set up frame rate for the case using deltaTime
@@ -534,7 +580,19 @@ int main(int argc, char* argv[]) {
 
 				// check for collison with the ground
 				player.groundCollisionLeft = SDL_HasIntersection(&player.feetRect, &leftGroundRect);
-				player.groundCollisionRight = SDL_HasIntersection(&player.feetRect, &rightGroundRect);
+				if(SDL_HasIntersection(&player.feetRect, &rightGroundRect)){
+					player.health--;
+				}
+
+				if(SDL_HasIntersection(&player.posRect, &Lava)){
+					player.health = 0;
+					cout << "hit barrier" << endl;
+				}
+
+				if(player.health <= 0){
+					gameState = LOSE;
+					level1 = false;
+				}
 
 				// check for collision with the player's arrows and the dragon
 				for (int i = 0; i < player.bulletList.size(); i++){
@@ -551,25 +609,6 @@ int main(int argc, char* argv[]) {
 						player.vel_Y -= 500 * deltaTime;
 					}
 					canSpawn = true;
-				}
-
-				// spawn in pterodactyls if the Dragon is in FlyAway state
-				if(dragon.state == dragon.FlyAway && dragonCount == 0){
-					canSpawn = true;
-					dragonCount = 1;
-				}
-
-				if(dragonCount == 1 && dragon.state == 0){
-					// start the dragon Timer
-					dragonTimer += deltaTime;
-					cout << "hit" << endl;
-				}
-
-				if(dragonTimer > 15){
-					dragonTimer = 0;
-					dragonCount = -1;
-					canSpawn = false;
-					dragon.state = dragon.DropIn;
 				}
 
 				//Check Collision on the large arrows and the strings holding the gate closed
@@ -602,6 +641,8 @@ int main(int argc, char* argv[]) {
 							arrowTimer = 0;
 							gate.sThreeY = gate.sThreeRect.y;
 							cout << "hit3" << endl;
+							lY += 800;
+							Lava.y = (int)(lY + .5f);
 							canSpawn = false;
 						}
 					}
@@ -706,9 +747,7 @@ int main(int argc, char* argv[]) {
 						RX_pos -= (player.speed) * deltaTime;
 						LX_pos -= (player.speed) * deltaTime;
 						airWayX_pos -= (player.speed) * deltaTime;
-
-						// move the test enemy
-						//eMoveX -= player.speed * deltaTime;
+						lX -= player.speed * deltaTime;
 
 						if(testRect.x >= -2000){
 							player.speed = 300;
@@ -716,9 +755,7 @@ int main(int argc, char* argv[]) {
 							rightGroundRect.x = (int)(RX_pos + .5f);
 							leftGroundRect.x = (int)(LX_pos + .5f);
 							airWayRect.x = (int)(airWayX_pos + .5f);
-
-							// move the test enemy
-							//enemyRect.x = (int)(eMoveX + .5f);
+							Lava.x = (int)(lX + .5f);
 
 							// move the lair gate
 							gate.MoveX(-player.speed, deltaTime);
@@ -745,9 +782,8 @@ int main(int argc, char* argv[]) {
 							RX_pos = rightGroundRect.x;
 							LX_pos = leftGroundRect.x;
 							airWayX_pos = airWayRect.x;
+							lX = Lava.x;
 
-							// move the test enemy
-							//eMoveX = enemyRect.x;
 						}
 					}
 					if(player.left == true){
@@ -756,18 +792,14 @@ int main(int argc, char* argv[]) {
 						RX_pos += (player.speed) * deltaTime;
 						LX_pos += (player.speed) * deltaTime;
 						airWayX_pos += (player.speed) * deltaTime;
-
-						// move the test enemy
-						//eMoveX += player.speed * deltaTime;
+						lX += player.speed * deltaTime;
 
 						if(testRect.x <= -2){
 							testRect.x = (int)(X_pos + .5f);
 							rightGroundRect.x = (int)(RX_pos + .5f);
 							leftGroundRect.x = (int)(LX_pos + .5f);
 							airWayRect.x = (int)(airWayX_pos + .5f);
-
-							// move the test enemy
-							//enemyRect.x = (int)(eMoveX + .5f);
+							Lava.x = (int)(lX + .5f);
 
 							// move the lair gate
 							gate.MoveX(player.speed, deltaTime);
@@ -794,9 +826,8 @@ int main(int argc, char* argv[]) {
 							RX_pos = rightGroundRect.x;
 							LX_pos = leftGroundRect.x;
 							airWayX_pos = airWayRect.x;
+							lX = Lava.x;
 
-							// move the test enemy
-							//eMoveX = enemyRect.x;
 						}
 					}
 
@@ -807,18 +838,14 @@ int main(int argc, char* argv[]) {
 						RY_pos += moveSpeed * deltaTime;
 						LY_pos += moveSpeed * deltaTime;
 						airWayY_pos += (moveSpeed) * deltaTime;
-
-						// move the test enemy
-						//eMoveY -= player.vel_Y * deltaTime;
+						lY += moveSpeed * deltaTime;
 
 						if(testRect.y < 0){
 							testRect.y = (int)(Y_pos + .5f);
 							rightGroundRect.y = (int)(RY_pos + .5f);
 							leftGroundRect.y = (int)(LY_pos + .5f);
 							airWayRect.y = (int)(airWayY_pos + .5f);
-
-							// move the test enemy
-							//enemyRect.y = (int)(eMoveY + .5f);
+							Lava.y = (int)(lY + .5f);
 
 							// move the lair gate
 							gate.MoveY(moveSpeed, deltaTime);
@@ -844,9 +871,8 @@ int main(int argc, char* argv[]) {
 							RY_pos = rightGroundRect.y;
 							LY_pos = leftGroundRect.y;
 							airWayY_pos = airWayRect.y;
+							lY = Lava.y;
 
-							// move the test enemy
-							//eMoveY = enemyRect.y;
 						}
 					}
 					if(player.pos_Y > 600){
@@ -856,18 +882,14 @@ int main(int argc, char* argv[]) {
 						RY_pos -= moveSpeed * deltaTime;
 						LY_pos -= moveSpeed * deltaTime;
 						airWayY_pos -= (moveSpeed) * deltaTime;
-
-						// move the test enemy
-						//eMoveY -= player.vel_Y * deltaTime;
+						lY -= moveSpeed * deltaTime;
 
 						if(testRect.y > -1800){
 							testRect.y = (int)(Y_pos + .5f);
 							rightGroundRect.y = (int)(RY_pos + .5f);
 							leftGroundRect.y = (int)(LY_pos + .5f);
 							airWayRect.y = (int)(airWayY_pos + .5f);
-
-							// move the test enemy
-							//enemyRect.y = (int)(eMoveY + .5f);
+							Lava.y = (int)(lY + .5f);
 
 							// move the lair gate
 							gate.MoveY(-moveSpeed, deltaTime);
@@ -893,9 +915,8 @@ int main(int argc, char* argv[]) {
 							RY_pos = rightGroundRect.y;
 							LY_pos = leftGroundRect.y;
 							airWayY_pos = airWayRect.y;
+							lY = Lava.y;
 
-							// move the test enemy
-							//eMoveY = enemyRect.y;
 						}
 					}
 				} else {
@@ -908,6 +929,9 @@ int main(int argc, char* argv[]) {
 						player.posRect.y = player.pos_Y = 610;
 						testRect.x = X_pos = -2048;
 						testRect.y = 0;
+
+						lX = Lava.x = -1000;
+						lY = Lava.y = 2000;
 
 						pickUpList[6].posRect.y = pickUpList[6].pos_Y = 670;
 						pickUpList[6].posRect.x = pickUpList[6].pos_X = 200;
@@ -985,15 +1009,22 @@ int main(int argc, char* argv[]) {
 					// check to see if the SDL Window is closed - player clicks X in the Window
 					if (event.type == SDL_QUIT) {
 						quit = true;
-						level1 = false;
+						win = false;
 						break;
 					}
 					switch(event.type){
 					// enter case for button down with this code - case SDL_CONTROLLERBUTTONDOWN: & if (event.cdevice.which == 0)
 					case SDL_MOUSEBUTTONDOWN:
 						if(event.button.button == SDL_BUTTON_LEFT){
-							//use this area to shoot an arrow
+							if(SDL_HasIntersection(&cursor, &playButton)){
+								win = false;
+								gameState = LEVEL1;
+							}
 
+							if(SDL_HasIntersection(&cursor, &quitButton)){
+								win = false;
+								quit = true;
+							}
 						}
 						break;
 					case SDL_KEYDOWN:
@@ -1006,12 +1037,15 @@ int main(int argc, char* argv[]) {
 						break;
 					default:break;
 					} // end switch event type
+
+					cursor.x = event.button.x;
+					cursor.y = event.button.y;
 				} // end poll event
 
 				// Clear SDL renderer
 				SDL_RenderClear(renderer);
 
-				SDL_RenderCopy(renderer, playO, NULL, &playButton);
+				SDL_RenderCopy(renderer, winT, NULL, &winTitle);
 
 				if(SDL_HasIntersection(&cursor, &playButton)){
 					SDL_RenderCopy(renderer, playO, NULL, &playButton);
@@ -1049,14 +1083,22 @@ int main(int argc, char* argv[]) {
 					// check to see if the SDL Window is closed - player clicks X in the Window
 					if (event.type == SDL_QUIT) {
 						quit = true;
-						level1 = false;
+						lose = false;
 						break;
 					}
 					switch(event.type){
 					// enter case for button down with this code - case SDL_CONTROLLERBUTTONDOWN: & if (event.cdevice.which == 0)
 					case SDL_MOUSEBUTTONDOWN:
 						if(event.button.button == SDL_BUTTON_LEFT){
-							//use this area to shoot an arrow
+							if(SDL_HasIntersection(&cursor, &playButton)){
+								lose = false;
+								gameState = LEVEL1;
+							}
+
+							if(SDL_HasIntersection(&cursor, &quitButton)){
+								lose = false;
+								quit = true;
+							}
 
 						}
 						break;
@@ -1070,12 +1112,27 @@ int main(int argc, char* argv[]) {
 						break;
 					default:break;
 					} // end switch event type
+
+					cursor.x = event.button.x;
+					cursor.y = event.button.y;
 				} // end poll event
 
 				// Clear SDL renderer
 				SDL_RenderClear(renderer);
 
+				SDL_RenderCopy(renderer, loseT, NULL, &loseTitle);
 
+				if(SDL_HasIntersection(&cursor, &playButton)){
+					SDL_RenderCopy(renderer, playO, NULL, &playButton);
+				} else {
+					SDL_RenderCopy(renderer, playN, NULL, &playButton);
+				}
+
+				if(SDL_HasIntersection(&cursor, &quitButton)){
+					SDL_RenderCopy(renderer, quitO, NULL, &quitButton);
+				} else {
+					SDL_RenderCopy(renderer, quitN, NULL, &quitButton);
+				}
 
 				// present the renderer
 				SDL_RenderPresent(renderer);

@@ -159,6 +159,7 @@ public:
 		posRect.y = (int)(posY + .5f);
 		up = true;
 		initDeath = true;
+		state = Idle;
 	}
 
 	void Update(float deltaTime, SDL_Rect PlayerRect){

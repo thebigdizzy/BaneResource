@@ -155,7 +155,7 @@ public:
 			posRect.x = (int)(pos_X + .5f);
 	}
 
-	void reset(){
+	void Reset(){
 		active = true;
 		timer = 0;
 		startTimer = false;

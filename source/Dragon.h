@@ -73,8 +73,8 @@ public:
 		posRect.x = posX = x;
 		posRect.y = posY = y;
 
-		hitRect.x = posRect.x + 50;
-		hitRect.y = posRect.y + 50;
+		hitRect.x = posRect.x;
+		hitRect.y = posRect.y;
 
 		fireballTimer = 0;
 
@@ -89,8 +89,8 @@ public:
 		path = filePath + "diamond.png";
 		hitTexture = IMG_LoadTexture(renderer, path.c_str());
 		SDL_QueryTexture(hitTexture, NULL, NULL, &w, &h);
-		hitRect.w = w;
-		hitRect.h = h;
+		hitRect.w = w*2;
+		hitRect.h = h*2;
 
 		for (int i = 0; i < max; i++) {
 			fireball.push_back(new FireBall(renderer, filePath, -1000, -1000));
@@ -99,7 +99,6 @@ public:
 
 	void Draw(SDL_Renderer *renderer) {
 		SDL_RenderCopy(renderer, texture, NULL, &posRect);
-		SDL_RenderCopy(renderer, hitTexture, NULL, &hitRect);
 
 		for (int i = 0; i < max; i++) {
 			if (fireball[i]->active) {

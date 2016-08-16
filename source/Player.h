@@ -79,7 +79,7 @@ public:
 	float xDir, xDirOld;
 
 	float speed;
-	float pos_X, pos_Y, lArmPosX, lArmPosY, rArmPosX, rArmPosY;
+	float pos_X, pos_Y, lArmPosX, lArmPosY, rArmPosX, rArmPosY, sX, sY;
 	float vel_Y;
 	float newJumpLevel, oldJumpLevel;
 

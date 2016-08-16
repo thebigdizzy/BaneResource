@@ -24,6 +24,7 @@ public:
 	SDL_Rect posRect, sOneRect, sTwoRect, sThreeRect;
 	SDL_Texture *texture, *stringTex;
 	float posX, posY, sOneY, sTwoY, sThreeY;
+	float sX, sY;
 
 	SDL_Point center;
 	double angle;
@@ -37,8 +38,8 @@ public:
 	Gate(){}
 
 	Gate(SDL_Renderer *renderer, string filePath, string audioPath, int x, int y){
-		posRect.x = posX = x;
-		posRect.y = posY = y;
+		posRect.x = posX = sX = x;
+		posRect.y = posY = sY = y;
 
 		sOneRect.x = posRect.x - 60;
 		sTwoRect.x = posRect.x - 50;
@@ -71,6 +72,16 @@ public:
 
 		fall1 = fall2 = fall3 = false;
 
+		state = Idle;
+	}
+
+	void Reset(){
+		posRect.x = posX = sX;
+		posRect.y = posY = sY;
+
+		sOneRect.y = sOneY = sTwoY = sThreeY = posRect.y - 100;
+
+		angle = 0;
 		state = Idle;
 	}
 
